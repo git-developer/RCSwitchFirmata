@@ -14,6 +14,7 @@
 */
 
 #include "RCSwitchFirmata.h"
+#include <Encoder7Bit.h>
 
 void RCSwitchFirmata::handleCapability(byte pin)
 {
@@ -38,31 +39,36 @@ boolean RCSwitchFirmata::handlePinMode(byte pin, int mode)
 
 void RCSwitchFirmata::reset()
 {
-  for (byte pin=0; pin<TOTAL_PINS; pin++) {
+  for (byte pin = 0; pin < TOTAL_PINS; pin++) {
     if (IS_PIN_DIGITAL(pin)) {
       detach(pin);
     }
   }
 }
 
-boolean RCSwitchFirmata::handleSysex(byte command, byte argc, byte* argv)
+boolean RCSwitchFirmata::handleSysex(byte command, byte argc, byte *argv)
 {
-  if (command == RCSWITCH_SEND) {
+  if (command == RCSWITCH_SEND && argc > 1) { // at least pin & subcommand are necessary
     byte pin = argv[0];
     if (Firmata.getPinMode(pin)==IGNORE) {
       return false;
     }
     
-    char tristateCode[argc-1];
-    for (int i = 1; i < argc; i++) {
-      switch(argv[i]) {
-        case TRISTATE_0: tristateCode[i-1] = '0'; break;
-        case TRISTATE_F: tristateCode[i-1] = 'F'; break;
-        case TRISTATE_1: tristateCode[i-1] = '1'; break;
-        default: break;
-      }
+    byte subcommand = argv[1];
+    byte length = argc-2;
+    byte *data = (byte*) argv+2;
+RCSwitchFirmata::send("subcommand", subcommand);
+RCSwitchFirmata::send("data[0]", data[0]);
+RCSwitchFirmata::send("data[1]", data[1]);
+    switch (subcommand) {
+      case RCSWITCH_SEND_MESSAGE:          sendMessage(pin, length, data); break;
+      case RCSWITCH_SET_PULSE_LENGTH:      setPulseLength(pin, asInt(data)); break;
+      case RCSWITCH_SET_REPEAT_TRANSMIT:   setRepeatTransmit(pin, asInt(data)); break;
+      case RCSWITCH_SET_RECEIVE_TOLERANCE: setReceiveTolerance(pin, asInt(data)); break;
+      case RCSWITCH_SET_PROTOCOL:          setProtocol(pin, asInt(data)); break;
+      default: send("Unknown subcommand", subcommand); break;
     }
-    senders[pin]->sendTriState(tristateCode);
+    
     return true;
   }
   return false;
@@ -70,7 +76,7 @@ boolean RCSwitchFirmata::handleSysex(byte command, byte argc, byte* argv)
 
 void RCSwitchFirmata::attach(byte pin)
 {
-  RCSwitch* sender = senders[pin];
+  RCSwitch *sender = senders[pin];
   if (!sender) {
     sender = new RCSwitch();
     senders[pin] = sender;
@@ -80,9 +86,75 @@ void RCSwitchFirmata::attach(byte pin)
 
 void RCSwitchFirmata::detach(byte pin)
 {
-  RCSwitch* sender = senders[pin];
+  RCSwitch *sender = senders[pin];
   if (sender) {
+    sender->disableTransmit();
     free(sender);
     senders[pin]=NULL;
   }
+}
+
+void RCSwitchFirmata::sendMessage(byte pin, byte length, byte *tristateBytes)
+{
+    RCSwitch *sender = senders[pin];
+    if (sender) {
+      char tristateCode[length];
+      for (int i = 0; i < length; i++) {
+        switch (tristateBytes[i]) {
+          case TRISTATE_0: tristateCode[i] = '0'; break;
+          case TRISTATE_F: tristateCode[i] = 'F'; break;
+          case TRISTATE_1: tristateCode[i] = '1'; break;
+          default: break;
+        }
+      }
+      sender->sendTriState(tristateCode);
+    }
+}
+
+void RCSwitchFirmata::setPulseLength(byte pin, int pulseLength)
+{
+send("pulseLength", pulseLength);
+    RCSwitch *sender = senders[pin];
+    if (sender) {
+      sender->setPulseLength(pulseLength);
+    }
+}
+void RCSwitchFirmata::setRepeatTransmit(byte pin, int count)
+{
+    RCSwitch *sender = senders[pin];
+    if (sender) {
+      sender->setRepeatTransmit(count);
+    }
+}
+void RCSwitchFirmata::setReceiveTolerance(byte pin, int percent)
+{
+    RCSwitch *sender = senders[pin];
+    if (sender) {
+      sender->setReceiveTolerance(percent);
+    }
+}
+void RCSwitchFirmata::setProtocol(byte pin, int protocol)
+{
+    RCSwitch *sender = senders[pin];
+    if (sender) {
+      sender->setProtocol(protocol);
+    }
+}
+
+int RCSwitchFirmata::asInt(byte* data) {
+ byte intBytes[2];
+ Encoder7Bit.readBinary(2, data, intBytes);
+RCSwitchFirmata::send("intBytes[0]", intBytes[0]);
+RCSwitchFirmata::send("intBytes[1]", intBytes[1]);
+ int i = *(int*) intBytes;
+ return i;
+}
+
+void RCSwitchFirmata::send(String name, int value) {
+ String s = name;
+ s += "=";
+ s = s + value;
+ char chars[s.length()+1];
+ s.toCharArray(chars, s.length()+1);
+ Firmata.sendString(chars);
 }

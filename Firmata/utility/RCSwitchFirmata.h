@@ -16,16 +16,22 @@
 #ifndef RCSwitchFirmata_h
 #define RCSwitchFirmata_h
 
-#include "../RCSwitch/RCSwitch.h"
-#include <Firmata.h>
 #include <utility/FirmataFeature.h>
+#include <RCSwitch.h>
 
-#define RCSWITCH_SEND 0x67 // used as sysex command to send a RCSwitch message
-#define RCSWITCH_PIN 0x0A          // used for capability query
+#define RCSWITCH_SEND 0x67  // sysex command to send a RCSwitch message
+#define RCSWITCH_PIN  0x0A  // used for capability query
+
+/* subcommands for RCSWITCH_SEND */
+#define RCSWITCH_SEND_MESSAGE          0x10
+#define RCSWITCH_SET_PULSE_LENGTH      0x11
+#define RCSWITCH_SET_REPEAT_TRANSMIT   0x12
+#define RCSWITCH_SET_RECEIVE_TOLERANCE 0x13
+#define RCSWITCH_SET_PROTOCOL          0x14
 
 #define TRISTATE_0 0x00
 #define TRISTATE_F 0x01
-#define TRISTATE_1 0x02
+#define TRISTATE_1 0x03
 
 class RCSwitchFirmata:public FirmataFeature
 {
@@ -41,6 +47,15 @@ private:
   void attach(byte pin);
   void detach(byte pin);
 
+  void sendMessage(byte pin, byte length, byte* tristateBytes);
+
+  void setPulseLength(byte pin, int pulseLength);
+  void setRepeatTransmit(byte pin, int count);
+  void setReceiveTolerance(byte pin, int percent);
+  void setProtocol(byte pin, int protocol);
+
+  int asInt(byte* data);
+  void send(String name, int value);
 };
 
 #endif
