@@ -253,7 +253,7 @@ sub sysex_handle {
       my @onewirepins;
       my @stepperpins;
       my @encoderpins;
-      my @rcswitchpins;
+      my @rcoutputpins;
       
       foreach my $pin (keys %$capabilities) {
         if (defined $capabilities->{$pin}) {
@@ -292,8 +292,8 @@ sub sysex_handle {
           	push @encoderpins, $pin;
             $self->{metadata}{encoder_resolutions}{$pin} = $capabilities->{$pin}->{PIN_ENCODER+0}->{resolution};
           }
-          if ($capabilities->{$pin}->{PIN_RCSWITCH+0}) {
-          	push @rcswitchpins, $pin;
+          if ($capabilities->{$pin}->{PIN_RCOUTPUT+0}) {
+          	push @rcoutputpins, $pin;
           }
         }
       }
@@ -307,7 +307,7 @@ sub sysex_handle {
       $self->{metadata}{onewire_pins} = \@onewirepins;
       $self->{metadata}{stepper_pins} = \@stepperpins;
       $self->{metadata}{encoder_pins} = \@encoderpins;
-      $self->{metadata}{rcswitch_pins} = \@rcswitchpins;
+      $self->{metadata}{rcoutput_pins} = \@rcoutputpins;
       last;
     };
 
@@ -832,10 +832,16 @@ sub encoder_detach {
   return $self->{io}->data_write($self->{protocol}->packet_encoder_detach( $encoderNum ));
 }
 
-sub rcswitch_send {
+sub rcoutput_send_code {
   my ( $self, $pin, $message ) = @_;
-  return $self->{io}->data_write($self->{protocol}->packet_rcswitch_send( $pin, $message ));
+  return $self->{io}->data_write($self->{protocol}->packet_rcoutput_code( $pin, $message ));
 }
+
+sub rcoutput_set_parameter {
+  my ( $self, $pin, $parameterName, $value ) = @_;
+  return $self->{io}->data_write($self->{protocol}->packet_rcoutput_parameter( $pin, $parameterName, $value ));
+}
+
 
 =head2 poll
 

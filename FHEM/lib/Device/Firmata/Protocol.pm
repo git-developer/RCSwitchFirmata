@@ -93,6 +93,19 @@ our $ENCODER_COMMANDS = {
   ENCODER_DETACH              => 5,
 };
 
+our $RCOUTPUT_COMMANDS = {
+  RCOUTPUT_SEND_CODE             => 0x10,
+  RCOUTPUT_SET_PROTOCOL          => 0x11,
+  RCOUTPUT_SET_PULSE_LENGTH      => 0x12,
+  RCOUTPUT_SET_REPEAT_TRANSMIT   => 0x13,
+};
+
+our $RCOUTPUT_TRISTATE_BITS = {
+  TRISTATE_0 => 0,
+  TRISTATE_F => 1,
+  TRISTATE_1 => 3,
+};
+
 our $MODENAMES = {
   0                           => 'INPUT',
   1                           => 'OUTPUT',
@@ -104,7 +117,7 @@ our $MODENAMES = {
   7                           => 'ONEWIRE',
   8                           => 'STEPPER',
   9                           => 'ENCODER',
-  10                          => 'RC_SWITCH',
+  10                          => 'RCOUTPUT',
 };
 
 =head1 DESCRIPTION
@@ -993,39 +1006,39 @@ sub handle_encoder_response {
   return \@retval;
 }
 
-#/* rcswitch data
-# * --------------------
-# * 0  START_SYSEX (0xF0)
-# * 1  RC_SWITCH_SEND_REQUEST (0x67)
-# * 2  pin number (0-127)
-# * 3  message
-# * 4  message
-# * 5  ...
-# * 6  maxPulse MSB (7-13)
-# * 7  END_SYSEX (0xF7)
-# */
-
-sub packet_rcswitch_send {
+# TODO Doc
+sub packet_rcoutput_code {
   my ( $self, $pin, $message ) = @_;
   
   my @message_bytes;
   for my $c (split //, $message) {
    if ($c eq "0") {
-     push @message_bytes, 0;
+     push @message_bytes, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_0};
    } elsif ($c eq "F") {
-     push @message_bytes, 1;
+     push @message_bytes, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_F};
    } elsif ($c eq "1") {
-     push @message_bytes, 2;
+     push @message_bytes, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_1};
    } else {
-     print "unsupported character " . $c
+     main::Log3 $self, 2, "Unsupported tristate symbol: " . $c
    }
   }
 
-  return $self->packet_sysex_command( RCSWITCH_SEND_REQUEST,
-    $pin & 0x7f,
-    @message_bytes
-  );
+  return $self->packet_sysex_command( RC_DATA, $pin, $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_CODE}, @message_bytes );
 }
+
+sub packet_rcoutput_parameter {
+  my ( $self, $pin, $parameterName, $value ) = @_;
+  my $parameter;
+  if ($parameterName eq "protocol") {
+    $parameter = $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PROTOCOL};
+  } elsif ($parameterName eq "pulseLength") {
+    $parameter = $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PULSE_LENGTH};
+  } elsif ($parameterName eq "repeatTransmit") {
+    $parameter = $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_REPEAT_TRANSMIT};
+  }
+  return $self->packet_sysex_command( RC_DATA, $pin, $parameter, pack_as_7bit($value) );
+}
+
 
 sub shift14bit {
   my $data = shift;

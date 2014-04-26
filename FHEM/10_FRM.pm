@@ -48,7 +48,7 @@ my @clients = qw(
   I2C_MCP23017
   I2C_BMP180
   FRM_LCD
-  FRM_RCSWITCH
+  FRM_RCOUT
 );
 
 #####################################
@@ -394,8 +394,8 @@ sub FRM_DoInit($) {
 					$main::defs{$name}{encoder_pins} = join(",", sort{$a<=>$b}(@$encoderpins)) if (defined $encoderpins and scalar @$encoderpins);
 					my $stepperpins = $device->{metadata}{stepper_pins};
 					$main::defs{$name}{stepper_pins} = join(",", sort{$a<=>$b}(@$stepperpins)) if (defined $stepperpins and scalar @$stepperpins);
-					my $rcswitchpins = $device->{metadata}{rcswitch_pins};
-					$main::defs{$name}{rcswitch_pins} = join(",", sort{$a<=>$b}(@$rcswitchpins)) if (defined $rcswitchpins and scalar @$rcswitchpins);
+					my $rcoutputpins = $device->{metadata}{rcoutput_pins};
+					$main::defs{$name}{rcoutput_pins} = join(",", sort{$a<=>$b}(@$rcoutputpins)) if (defined $rcoutputpins and scalar @$rcoutputpins);
 					if (defined $device->{metadata}{analog_resolutions}) {
 						my @analog_resolutions;
 						foreach my $pin (sort{$a<=>$b}(keys %{$device->{metadata}{analog_resolutions}})) {
@@ -1017,7 +1017,7 @@ sub FRM_OWX_Discover ($) {
    to Arduino supporting the <a href="http://en.wikipedia.org/wiki/I%C2%B2C">
    i2c-protocol</a>.<br>
   <a href="#OWX">OWX</a> to read/write sensors and actors on 1-Wire bus.<br>
-  <a href="#FRM_RCSWITCH">FRM_RCSWITCH</a> for radio controlled switches<br><br>
+  <a href="#FRM_RCOUT">FRM_RCOUT</a> for radio control senders<br><br>
    
   Each client stands for a Pin of the Arduino configured for a specific use 
   (digital/analog in/out) or an integrated circuit connected to Arduino by i2c.<br><br>

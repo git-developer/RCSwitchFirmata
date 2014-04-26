@@ -18,33 +18,36 @@ use Device::Firmata::Constants  qw/ :all /;
 #####################################
 
 my %sets = (
-  "message" => "",
+  "code"             => "",
+  "protocol"         => "",
+  "pulseLength"      => "",
+  "repeatTransmit"   => "",
 );
 
 sub
-FRM_RCSWITCH_Initialize($)
+FRM_RCOUT_Initialize($)
 {
   my ($hash) = @_;
 
-  $hash->{SetFn}     = "FRM_RCSWITCH_Set";
+  $hash->{SetFn}     = "FRM_RCOUT_Set";
   $hash->{DefFn}     = "FRM_Client_Define";
-  $hash->{InitFn}    = "FRM_RCSWITCH_Init";
+  $hash->{InitFn}    = "FRM_RCOUT_Init";
   $hash->{UndefFn}   = "FRM_Client_Undef";
-  $hash->{AttrFn}    = "FRM_RCSWITCH_Attr";
+  $hash->{AttrFn}    = "FRM_RCOUT_Attr";
   
   $hash->{AttrList}  = "dummy-attr IODev $main::readingFnAttributes";
   main::LoadModule("FRM");
 }
 
 sub
-FRM_RCSWITCH_Init($$)
+FRM_RCOUT_Init($$)
 {
   my ($hash,$args) = @_;
-  my $ret = FRM_Init_Pin_Client($hash,$args,PIN_RCSWITCH);
+  my $ret = FRM_Init_Pin_Client($hash,$args,PIN_RCOUTPUT);
   return $ret if (defined $ret);
   eval {
     my $firmata = FRM_Client_FirmataDevice($hash);
-    FRM_RCSWITCH_apply_attribute($hash, "dummy-attr");
+    FRM_RCOUT_apply_attribute($hash, "dummy-attr");
   };
   return FRM_Catch($@) if $@;
   main::readingsSingleUpdate($hash,"state","Initialized",1);
@@ -52,7 +55,7 @@ FRM_RCSWITCH_Init($$)
 }
 
 sub
-FRM_RCSWITCH_Attr($$$$) {
+FRM_RCOUT_Attr($$$$) {
   my ($command,$name,$attribute,$value) = @_;
   my $hash = $main::defs{$name};
   eval {
@@ -68,7 +71,7 @@ FRM_RCSWITCH_Attr($$$$) {
         ($attribute eq "dummy-attr") and do {
           if ($main::init_done) {
           	$main::attr{$name}{$attribute}=$value;
-            FRM_RCSWITCH_apply_attribute($hash,$attribute);
+            FRM_RCOUT_apply_attribute($hash,$attribute);
           }
           last;
         };
@@ -83,7 +86,7 @@ FRM_RCSWITCH_Attr($$$$) {
   return undef;
 }
 
-sub FRM_RCSWITCH_apply_attribute {
+sub FRM_RCOUT_apply_attribute {
   my ($hash,$attribute) = @_;
   if ($attribute eq "dummy-attr") {
     my $name = $hash->{NAME};
@@ -92,17 +95,21 @@ sub FRM_RCSWITCH_apply_attribute {
 }
 
 sub
-FRM_RCSWITCH_Set($@)
+FRM_RCOUT_Set($@)
 {
   my ($hash, @a) = @_;
-  return "Need at least one parameters" if(@a < 2);
+  return "Need at least 2 parameters" if(@a < 2);
   return "Unknown argument $a[1], choose one of " . join(" ", sort keys %sets)
   	if(!defined($sets{$a[1]}));
   my $command = $a[1];
   my $value = $a[2];
   eval {
-    FRM_Client_FirmataDevice($hash)->rcswitch_send($hash->{PIN}, $value);
-    main::readingsSingleUpdate($hash,"state",$value, 1);
+    if ($command eq "code") {
+      FRM_Client_FirmataDevice($hash)->rcoutput_send_code($hash->{PIN}, $value);
+      main::readingsSingleUpdate($hash,"state",$value, 1);
+    } else {
+      FRM_Client_FirmataDevice($hash)->rcoutput_set_parameter($hash->{PIN}, $command, $value);
+    }
   };
   return $@;
 }
@@ -112,32 +119,32 @@ FRM_RCSWITCH_Set($@)
 =pod
 =begin html
 
-<a name="FRM_RCSWITCH"></a>
-<h3>FRM_RCSWITCH</h3>
+<a name="FRM_RCOUT"></a>
+<h3>FRM_RCOUT</h3>
 <ul>
   represents a pin of an <a href="http://www.arduino.cc">Arduino</a> running <a href="http://www.firmata.org">Firmata</a>
   configured to send data via the RCSwitch library.<br>
   Requires a defined <a href="#FRM">FRM</a>-device to work.<br><br> 
   
-  <a name="FRM_RCSWITCHdefine"></a>
+  <a name="FRM_RCOUTdefine"></a>
   <b>Define</b>
   <ul>
-  <code>define &lt;name&gt; FRM_RCSWITCH &lt;pin&gt;</code> <br>
-  Defines the FRM_RCSWITCH device. &lt;pin&gt> is the arduino-pin to use.
+  <code>define &lt;name&gt; FRM_RCOUT &lt;pin&gt;</code> <br>
+  Defines the FRM_RCOUT device. &lt;pin&gt> is the arduino-pin to use.
   </ul>
   
   <br>
-  <a name="FRM_RCSWITCHset"></a>
+  <a name="FRM_RCOUTset"></a>
   <b>Set</b><br>
   <ul>
-  <code>set &lt;name&gt; message &lt;message&gt;</code><br>sends a tristate message in tristate format, e.g. <code>00FFF FF0FF F0<code> <br/> 
+  <code>set &lt;name&gt; code &lt;code&gt;</code><br>sends a tristate coded message, e.g. <code>00FFF FF0FF F0<code> <br/> 
   </ul>
-  <a name="FRM_RCSWITCHget"></a>
+  <a name="FRM_RCOUTget"></a>
   <b>Get</b><br>
   <ul>
   N/A
   </ul><br>
-  <a name="FRM_RCSWITCHattr"></a>
+  <a name="FRM_RCOUTattr"></a>
   <b>Attributes</b><br>
   <ul>
       <li><a href="#IODev">IODev</a><br>

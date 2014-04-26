@@ -29,7 +29,7 @@ use constant (
     PIN_ONEWIRE => 7,
     PIN_STEPPER => 8,
     PIN_ENCODER => 9,
-    PIN_RCSWITCH => 10,
+    PIN_RCOUTPUT => 10,
     PIN_LOW  => 0,
     PIN_HIGH => 1,
   }
@@ -317,7 +317,7 @@ use constant (
       # extended command set using sysex (0-127/0x00-0x7F)
       RESERVED_COMMAND         => 0x00, # 2nd SysEx data byte is a chip-specific command (AVR, PIC, TI, etc).
       ENCODER_DATA             => 0x61, # receive rotary-encoders current positions
-      RCSWITCH_SEND_REQUEST    => 0x67, # send RCSwitch message
+      RC_DATA                  => 0x67, # send RCSwitch data
       ANALOG_MAPPING_QUERY     => 0x69, # ask for mapping of analog to pin numbers
       ANALOG_MAPPING_RESPONSE  => 0x6A, # reply with mapping info
       CAPABILITY_QUERY         => 0x6B, # ask for supported modes and resolution of all pins
@@ -350,7 +350,7 @@ use constant (
       ONEWIRE                  => 0x07, # pin configured for 1-Wire commuication
       STEPPER                  => 0x08, # pin configured for stepper motor
       ENCODER                  => 0x09, # pin configured for rotary-encoders
-      RCSWITCH                 => 0x10, # pin configured for RCSwitch
+      RCOUTPUT                => 0x10, # pin configured for RCSwitch
       
 
       # Deprecated entries
