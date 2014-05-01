@@ -350,7 +350,7 @@ use constant (
       ONEWIRE                  => 0x07, # pin configured for 1-Wire commuication
       STEPPER                  => 0x08, # pin configured for stepper motor
       ENCODER                  => 0x09, # pin configured for rotary-encoders
-      RCOUTPUT                => 0x10, # pin configured for RCSwitch
+      RCOUTPUT                 => 0x10, # pin configured for RCSwitch
       
 
       # Deprecated entries

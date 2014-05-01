@@ -95,15 +95,27 @@ our $ENCODER_COMMANDS = {
 
 our $RCOUTPUT_COMMANDS = {
   RCOUTPUT_SEND_CODE             => 0x10,
-  RCOUTPUT_SET_PROTOCOL          => 0x11,
-  RCOUTPUT_SET_PULSE_LENGTH      => 0x12,
-  RCOUTPUT_SET_REPEAT_TRANSMIT   => 0x13,
+  RCOUTPUT_SET_PROTOCOL          => 0x21,
+  RCOUTPUT_SET_PULSE_LENGTH      => 0x22,
+  RCOUTPUT_SET_REPEAT_TRANSMIT   => 0x24,
+};
+
+our $RCOUTPUT_PARAMETERS = {
+  "protocol"       => $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PROTOCOL},
+  "pulseLength"    => $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PULSE_LENGTH},
+  "repeatTransmit" => $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_REPEAT_TRANSMIT},
 };
 
 our $RCOUTPUT_TRISTATE_BITS = {
   TRISTATE_0 => 0,
   TRISTATE_F => 1,
   TRISTATE_1 => 3,
+};
+
+our $RCOUTPUT_TRISTATE_CHARS = {
+  "0" => $RCOUTPUT_TRISTATE_BITS->{TRISTATE_0},
+  "F" => $RCOUTPUT_TRISTATE_BITS->{TRISTATE_F},
+  "1" => $RCOUTPUT_TRISTATE_BITS->{TRISTATE_1},
 };
 
 our $MODENAMES = {
@@ -333,6 +345,11 @@ sub sysex_parse {
 
         $command == $protocol_commands->{ENCODER_DATA} and do {
           $return_data = $self->handle_encoder_response($sysex_data);
+          last;
+        };
+
+        $command == $protocol_commands->{RC_DATA} and do {
+          $return_data = $self->handle_rc_response($sysex_data);
           last;
         };
 
@@ -1011,34 +1028,66 @@ sub packet_rcoutput_code {
   my ( $self, $pin, $message ) = @_;
   
   my @message_bytes;
-  for my $c (split //, $message) {
-   if ($c eq "0") {
-     push @message_bytes, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_0};
-   } elsif ($c eq "F") {
-     push @message_bytes, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_F};
-   } elsif ($c eq "1") {
-     push @message_bytes, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_1};
+  for my $symbol (split //, $message) {
+   my $tristateBit = $RCOUTPUT_TRISTATE_CHARS->{$symbol};
+   if (defined($tristateBit)) {
+     push @message_bytes, $RCOUTPUT_TRISTATE_CHARS->{$symbol};
    } else {
-     main::Log3 $self, 2, "Unsupported tristate symbol: " . $c
+     #TODO Logging should be avoided in a library, but how to notify the user without aborting?
+     main::Log3 $self, 2, "Ignoring unsupported tristate symbol: " . $symbol
    }
   }
-
-  return $self->packet_sysex_command( RC_DATA, $pin, $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_CODE}, @message_bytes );
+  return $self->packet_sysex_command( 'RC_DATA',
+                                      $pin,
+                                      $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_CODE},
+                                      pack_as_7bit(@message_bytes)
+                                    );
 }
 
 sub packet_rcoutput_parameter {
-  my ( $self, $pin, $parameterName, $value ) = @_;
-  my $parameter;
-  if ($parameterName eq "protocol") {
-    $parameter = $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PROTOCOL};
-  } elsif ($parameterName eq "pulseLength") {
-    $parameter = $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PULSE_LENGTH};
-  } elsif ($parameterName eq "repeatTransmit") {
-    $parameter = $RCOUTPUT_COMMANDS->{RCOUTPUT_SET_REPEAT_TRANSMIT};
+  my ( $self, $pin, $name, $value ) = @_;
+  my $parameter = $RCOUTPUT_PARAMETERS->{$name};
+  if (!defined($parameter)) {
+    die "Undefined parameter name '$name', choose one of "
+          . join(" ", sort keys $RCOUTPUT_PARAMETERS);
   }
-  return $self->packet_sysex_command( RC_DATA, $pin, $parameter, pack_as_7bit($value) );
+  
+  my @message_bytes = ($value & 0xFF, ($value>>8) & 0xFF);
+  return $self->packet_sysex_command( 'RC_DATA', $pin, $parameter, pack_as_7bit(@message_bytes) );
 }
 
+sub handle_rc_response {
+  my ( $self, $sysex_data ) = @_;
+  my @retval = ();
+  
+  my $pin     = shift @$sysex_data;
+  my $command = shift @$sysex_data;
+  my @values  = unpack_from_7bit(@$sysex_data);
+  my $value;
+  
+  if ($command eq $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_CODE}) {
+    $command = "code";
+
+    my %tristateChars = reverse(%$RCOUTPUT_TRISTATE_CHARS);
+    my $tristateCharsRef = \%tristateChars;
+    $value = "";
+    foreach (@values) {
+      $value .= $tristateCharsRef->{$_};
+    }
+  } else {
+    my %commands = reverse(%$RCOUTPUT_PARAMETERS);
+    my $commandsRef = \%commands;
+    $command = $commandsRef->{$command};
+    $value = $values[0] + ($values[1] << 8);
+  }
+  #TODO is logging OK here?
+  main::Log 5, "pin $pin, command $command, value $value";  
+  return {
+    pin     => $pin,
+    command => $command,
+    value   => $value,
+  };
+}
 
 sub shift14bit {
   my $data = shift;

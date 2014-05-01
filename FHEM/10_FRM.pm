@@ -613,7 +613,10 @@ sub new {
 sub data_write {
    	my ( $self, $buf ) = @_;
    	my $hash = $self->{hash};
-    main::Log3 $hash->{NAME},5,$hash->{FD}.">".join(",",map{sprintf"%02x",ord$_}split//,$buf);
+    my $fd = $hash->{FD}; 
+    $fd = $hash->{USBDev} unless defined $fd;
+    $fd = "<fd undefined>" unless defined $fd;
+    main::Log3 $hash->{NAME},5,$fd.">".join(",",map{sprintf"%02x",ord$_}split//,$buf);
    	main::DevIo_SimpleWrite($hash,$buf,undef);
 }
 
@@ -621,8 +624,11 @@ sub data_read {
     my ( $self, $bytes ) = @_;
    	my $hash = $self->{hash};
     my $string = main::DevIo_SimpleRead($hash);
-    if (defined $string ) {
-   	    main::Log3 $hash->{NAME},5,$hash->{FD}."<".join(",",map{sprintf"%02x",ord$_}split//,$string);
+    if (defined $string) {
+        my $fd = $hash->{FD}; 
+        $fd = $hash->{USBDev} unless defined $fd;
+        $fd = "<fd undefined>" unless defined $fd;
+   	    main::Log3 $hash->{NAME},5,$fd."<".join(",",map{sprintf"%02x",ord$_}split//,$string);
    	}
     return $string;
 }

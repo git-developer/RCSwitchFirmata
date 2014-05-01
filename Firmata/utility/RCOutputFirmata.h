@@ -23,14 +23,17 @@
 #define PINMODE_RC_TRANSMIT   0x0A  // pin mode, used for capability query
 
 /* subcommands */
+#define UNKNOWN               0x00
 #define SEND_CODE             0x10
-#define SET_PROTOCOL          0x11
-#define SET_PULSE_LENGTH      0x12
-#define SET_REPEAT_TRANSMIT   0x13
+#define CONFIG                0x20
+#define SET_PROTOCOL          0x21
+#define SET_PULSE_LENGTH      0x22
+#define SET_REPEAT_TRANSMIT   0x24
 
-#define TRISTATE_0 0x00
-#define TRISTATE_F 0x01
-#define TRISTATE_1 0x03
+#define TRISTATE_0            0x00
+#define TRISTATE_F            0x01
+#define TRISTATE_RESERVED     0x02
+#define TRISTATE_1            0x03
 
 class RCOutputFirmata:public FirmataFeature
 {
@@ -47,7 +50,9 @@ private:
   void detach(byte pin);
 
   void convertToTristate(byte *tristateBytes, byte length, char* tristateCode);
+  void convertFromTristate(char* tristateCode, byte length, byte *tristateBytes);
   int unpack(byte* data);
+  void sendReply(byte pin, byte subcommand, byte length, byte *data);
   void debugLog(String name, int value);
 };
 

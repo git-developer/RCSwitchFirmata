@@ -19,6 +19,9 @@ use Device::Firmata::Constants  qw/ :all /;
 
 my %sets = (
   "code"             => "",
+);
+
+my %attributes = (
   "protocol"         => "",
   "pulseLength"      => "",
   "repeatTransmit"   => "",
@@ -35,7 +38,7 @@ FRM_RCOUT_Initialize($)
   $hash->{UndefFn}   = "FRM_Client_Undef";
   $hash->{AttrFn}    = "FRM_RCOUT_Attr";
   
-  $hash->{AttrList}  = "dummy-attr IODev $main::readingFnAttributes";
+  $hash->{AttrList}  = "IODev " . join(" ", %attributes) . " $main::readingFnAttributes";
   main::LoadModule("FRM");
 }
 
@@ -45,9 +48,10 @@ FRM_RCOUT_Init($$)
   my ($hash,$args) = @_;
   my $ret = FRM_Init_Pin_Client($hash,$args,PIN_RCOUTPUT);
   return $ret if (defined $ret);
+  my $pin = $hash->{PIN};
   eval {
     my $firmata = FRM_Client_FirmataDevice($hash);
-    FRM_RCOUT_apply_attribute($hash, "dummy-attr");
+    $firmata->observe_rc($pin,\&FRM_RCOUT_observer,$hash);
   };
   return FRM_Catch($@) if $@;
   main::readingsSingleUpdate($hash,"state","Initialized",1);
@@ -68,13 +72,15 @@ FRM_RCOUT_Attr($$$$) {
           }
           last;
         };
-        ($attribute eq "dummy-attr") and do {
+        
+        defined($attributes{$attribute}) and do {
           if ($main::init_done) {
           	$main::attr{$name}{$attribute}=$value;
             FRM_RCOUT_apply_attribute($hash,$attribute);
           }
           last;
         };
+        
       }
     }
   };
@@ -88,10 +94,30 @@ FRM_RCOUT_Attr($$$$) {
 
 sub FRM_RCOUT_apply_attribute {
   my ($hash,$attribute) = @_;
-  if ($attribute eq "dummy-attr") {
-    my $name = $hash->{NAME};
-    # do something with the attribute
-  }
+  my $name = $hash->{NAME};
+
+  return "Unknown attribute $attribute, choose one of " . join(" ", sort keys %attributes)
+  	if(!defined($attributes{$attribute}));
+   
+  FRM_Client_FirmataDevice($hash)->rcoutput_set_parameter($hash->{PIN}, $attribute, $main::attr{$name}{$attribute});
+}
+
+sub FRM_RCOUT_observer
+{
+  my ( $key, $value, $hash ) = @_;
+  my $name = $hash->{NAME};
+  Log3 $name, 4, "$key: $value";
+COMMAND_HANDLER: {
+
+    defined($sets{$key}) and do {
+      main::readingsSingleUpdate($hash, $key, $value, 1);
+      last;
+    };
+    defined($attributes{$key}) and do {
+      $main::attr{$name}{$key}=$value;
+      last;
+    };
+};
 }
 
 sub
@@ -106,9 +132,6 @@ FRM_RCOUT_Set($@)
   eval {
     if ($command eq "code") {
       FRM_Client_FirmataDevice($hash)->rcoutput_send_code($hash->{PIN}, $value);
-      main::readingsSingleUpdate($hash,"state",$value, 1);
-    } else {
-      FRM_Client_FirmataDevice($hash)->rcoutput_set_parameter($hash->{PIN}, $command, $value);
     }
   };
   return $@;

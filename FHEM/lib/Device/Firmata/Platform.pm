@@ -45,6 +45,7 @@ use Device::Firmata::Base
   encoder_observer            => [],
   scheduler_observer          => undef,
   string_observer             => undef,
+  rc_observer                 => [],
 
   # To track scheduled tasks
   tasks                       => [],
@@ -92,6 +93,7 @@ sub detach {
   $self->{stepper_observer}   = [];
   $self->{encoder_observer}   = [];
   $self->{scheduler_observer} = undef;
+  $self->{rc_observer}        = [];
   $self->{tasks}              = [];
   $self->{metadata}           = {};
 }
@@ -118,6 +120,7 @@ sub system_reset {
   $self->{stepper_observer}   = [];
   $self->{encoder_observer}   = [];
   $self->{scheduler_observer} = undef;
+  $self->{rc_observer}        = [];
   $self->{tasks}              = [];
   $self->{metadata}           = {};
 }
@@ -378,6 +381,15 @@ sub sysex_handle {
           $observer->{method}( $encoderNum, $encoder_data->{value}, $observer->{context} );
         }
       };
+      last;
+    };
+
+    $sysex_message->{command_str} eq 'RC_DATA' and do {
+      my $pin      = $data->{pin};
+      my $observer = $self->{rc_observer}[$pin];
+      if (defined $observer) {
+        $observer->{method}( $data->{command}, $data->{value}, $observer->{context} );
+      }
       last;
     };
   }
@@ -948,6 +960,16 @@ sub observe_string {
       method  => $observer,
       context => $context,
     };
+  return 1;
+}
+
+sub observe_rc {
+  my ( $self, $pin, $observer, $context ) = @_;
+  die "P unsupported mode 'RCOUTPUT' for pin '".$pin."'" unless ($self->is_supported_mode($pin,PIN_RCOUTPUT));
+  $self->{rc_observer}[$pin] =  {
+      method  => $observer,
+      context => $context,
+  };
   return 1;
 }
 
