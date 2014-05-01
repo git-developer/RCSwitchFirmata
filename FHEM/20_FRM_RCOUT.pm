@@ -18,13 +18,19 @@ use Device::Firmata::Constants  qw/ :all /;
 #####################################
 
 my %sets = (
-  "code"             => "",
+  "code"             => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_CODE},
 );
 
 my %attributes = (
-  "protocol"         => "",
-  "pulseLength"      => "",
-  "repeatTransmit"   => "",
+  "protocol"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PROTOCOL},
+  "pulseLength"      => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PULSE_LENGTH},
+  "repeatTransmit"   => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SET_REPEAT_TRANSMIT},
+);
+
+my %tristateBits = (
+  "0" => $Device::Firmata::Protocol::RCOUTPUT_TRISTATE_BITS->{TRISTATE_0},
+  "F" => $Device::Firmata::Protocol::RCOUTPUT_TRISTATE_BITS->{TRISTATE_F},
+  "1" => $Device::Firmata::Protocol::RCOUTPUT_TRISTATE_BITS->{TRISTATE_1},
 );
 
 sub
@@ -98,23 +104,31 @@ sub FRM_RCOUT_apply_attribute {
 
   return "Unknown attribute $attribute, choose one of " . join(" ", sort keys %attributes)
   	if(!defined($attributes{$attribute}));
-   
-  FRM_Client_FirmataDevice($hash)->rcoutput_set_parameter($hash->{PIN}, $attribute, $main::attr{$name}{$attribute});
+
+  FRM_Client_FirmataDevice($hash)->rcoutput_set_parameter($hash->{PIN}, $attributes{$attribute}, $main::attr{$name}{$attribute});
 }
 
 sub FRM_RCOUT_observer
 {
   my ( $key, $value, $hash ) = @_;
   my $name = $hash->{NAME};
-  Log3 $name, 4, "$key: $value";
+  
+  my %s = reverse(%sets);
+  my %a = reverse(%attributes);
+  
 COMMAND_HANDLER: {
-
-    defined($sets{$key}) and do {
-      main::readingsSingleUpdate($hash, $key, $value, 1);
+    defined($s{$key}) and do {
+      my %tristateChars = reverse(%tristateBits);
+      my $tristateCode = join("", map {$tristateChars{$_}} @$value); 
+     Log3 $name, 4, "$s{$key}: $tristateCode";
+      main::readingsSingleUpdate($hash, $s{$key}, $tristateCode, 1);
       last;
     };
-    defined($attributes{$key}) and do {
-      $main::attr{$name}{$key}=$value;
+    defined($a{$key}) and do {
+      $value = @$value[0] + (@$value[1] << 8);
+      Log3 $name, 4, "$a{$key}: $value";
+
+      $main::attr{$name}{$a{$key}}=$value;
       last;
     };
 };
@@ -129,10 +143,12 @@ FRM_RCOUT_Set($@)
   	if(!defined($sets{$a[1]}));
   my $command = $a[1];
   my $value = uc($a[2]);
-  main::Log3 $hash, 2, $value;
+  
+  my @v = map {$tristateBits{$_}} split("", $value); 
+
   eval {
     if ($command eq "code") {
-      FRM_Client_FirmataDevice($hash)->rcoutput_send_code($hash->{PIN}, $value);
+      FRM_Client_FirmataDevice($hash)->rcoutput_send_code($hash->{PIN}, @v);
     }
   };
   return $@;

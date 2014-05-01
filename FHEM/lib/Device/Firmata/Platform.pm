@@ -845,13 +845,13 @@ sub encoder_detach {
 }
 
 sub rcoutput_send_code {
-  my ( $self, $pin, $message ) = @_;
-  return $self->{io}->data_write($self->{protocol}->packet_rcoutput_code( $pin, $message ));
+  my ( $self, $pin, @code ) = @_;
+  return $self->{io}->data_write($self->{protocol}->packet_rcoutput_code( $pin, @code ));
 }
 
 sub rcoutput_set_parameter {
-  my ( $self, $pin, $parameterName, $value ) = @_;
-  return $self->{io}->data_write($self->{protocol}->packet_rcoutput_parameter( $pin, $parameterName, $value ));
+  my ( $self, $pin, $parameter, $value ) = @_;
+  return $self->{io}->data_write($self->{protocol}->packet_rcoutput_parameter( $pin, $parameter, $value ));
 }
 
 
@@ -965,7 +965,7 @@ sub observe_string {
 
 sub observe_rc {
   my ( $self, $pin, $observer, $context ) = @_;
-  die "P unsupported mode 'RCOUTPUT' for pin '".$pin."'" unless ($self->is_supported_mode($pin,PIN_RCOUTPUT));
+  die "Unsupported mode 'RCOUTPUT' for pin '".$pin."'" unless ($self->is_supported_mode($pin,PIN_RCOUTPUT));
   $self->{rc_observer}[$pin] =  {
       method  => $observer,
       context => $context,
