@@ -128,7 +128,8 @@ FRM_RCOUT_Set($@)
   return "Unknown argument $a[1], choose one of " . join(" ", sort keys %sets)
   	if(!defined($sets{$a[1]}));
   my $command = $a[1];
-  my $value = $a[2];
+  my $value = uc($a[2]);
+  main::Log3 $hash, 2, $value;
   eval {
     if ($command eq "code") {
       FRM_Client_FirmataDevice($hash)->rcoutput_send_code($hash->{PIN}, $value);
