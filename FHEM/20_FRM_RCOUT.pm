@@ -18,13 +18,15 @@ use Device::Firmata::Constants  qw/ :all /;
 #####################################
 
 my %sets = (
-  "code"             => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_TRISTATE_CODE},
+  "tristateCode"     => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_TRISTATE},
+#  "longCode"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_LONG},
+#  "charCode"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_CHAR},
 );
 
 my %attributes = (
-  "protocol"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PROTOCOL},
-  "pulseLength"      => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SET_PULSE_LENGTH},
-  "repeatTransmit"   => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SET_REPEAT_TRANSMIT},
+  "protocol"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_PROTOCOL},
+  "pulseLength"      => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_PULSE_LENGTH},
+  "repeatTransmit"   => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_REPEAT_TRANSMIT},
 );
 
 my %tristateBits = (
@@ -44,23 +46,23 @@ FRM_RCOUT_Initialize($)
   $hash->{UndefFn}   = "FRM_Client_Undef";
   $hash->{AttrFn}    = "FRM_RCOUT_Attr";
   
-  $hash->{AttrList}  = "IODev " . join(" ", %attributes) . " $main::readingFnAttributes";
+  $hash->{AttrList}  = "IODev " . join(" ", keys %attributes) . " $main::readingFnAttributes";
   main::LoadModule("FRM");
 }
 
 sub
 FRM_RCOUT_Init($$)
 {
-  my ($hash,$args) = @_;
-  my $ret = FRM_Init_Pin_Client($hash,$args,PIN_RCOUTPUT);
+  my ($hash, $args) = @_;
+  my $ret = FRM_Init_Pin_Client($hash, $args, PIN_RCOUTPUT);
   return $ret if (defined $ret);
   my $pin = $hash->{PIN};
   eval {
     my $firmata = FRM_Client_FirmataDevice($hash);
-    $firmata->observe_rc($pin,\&FRM_RCOUT_observer,$hash);
+    $firmata->observe_rc($pin, \&FRM_RCOUT_observer, $hash);
   };
   return FRM_Catch($@) if $@;
-  main::readingsSingleUpdate($hash,"state","Initialized",1);
+  main::readingsSingleUpdate($hash, "state", "Initialized", 1);
   return undef;
 }
 
@@ -98,6 +100,9 @@ FRM_RCOUT_Attr($$$$) {
   return undef;
 }
 
+# The attribute is not applied within this module; instead, it is sent to the
+# microcontroller. When the change was successful, a response message will
+# arrive in the observer sub.
 sub FRM_RCOUT_apply_attribute {
   my ($hash,$attribute) = @_;
   my $name = $hash->{NAME};
@@ -105,7 +110,9 @@ sub FRM_RCOUT_apply_attribute {
   return "Unknown attribute $attribute, choose one of " . join(" ", sort keys %attributes)
   	if(!defined($attributes{$attribute}));
 
-  FRM_Client_FirmataDevice($hash)->rcoutput_set_parameter($hash->{PIN}, $attributes{$attribute}, $main::attr{$name}{$attribute});
+  FRM_Client_FirmataDevice($hash)->rcoutput_set_parameter($hash->{PIN},
+                                                          $attributes{$attribute},
+                                                          $main::attr{$name}{$attribute});
 }
 
 sub FRM_RCOUT_observer
@@ -129,6 +136,7 @@ COMMAND_HANDLER: {
       Log3 $name, 4, "$a{$key}: $value";
 
       $main::attr{$name}{$a{$key}}=$value;
+      # TODO refresh web GUI somehow?
       last;
     };
 };
@@ -146,9 +154,10 @@ FRM_RCOUT_Set($@)
   
   my @v = map {$tristateBits{$_}} split("", $value); 
 
+  my %s = reverse(%sets);
   eval {
-    if ($command eq "code") {
-      FRM_Client_FirmataDevice($hash)->rcoutput_send_code($hash->{PIN}, @v);
+    if ($sets{$command} eq $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_TRISTATE}) {
+      FRM_Client_FirmataDevice($hash)->rcoutput_send_code_tristate($hash->{PIN}, @v);
     }
   };
   return $@;
@@ -191,6 +200,9 @@ FRM_RCOUT_Set($@)
       Specify which <a href="#FRM">FRM</a> to use. (Optional, only required if there is more
       than one FRM-device defined.)
       </li>
+      <li>protocolRCSwitch protocol</li>
+      <li>pulseLength</li>
+      <li>repeatTransmit</li>
       <li><a href="#eventMap">eventMap</a><br></li>
       <li><a href="#readingFnAttributes">readingFnAttributes</a><br></li>
     </ul>

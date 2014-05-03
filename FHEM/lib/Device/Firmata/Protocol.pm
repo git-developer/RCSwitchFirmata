@@ -94,10 +94,13 @@ our $ENCODER_COMMANDS = {
 };
 
 our $RCOUTPUT_COMMANDS = {
-  RCOUTPUT_SEND_TRISTATE_CODE    => 0x10,
-  RCOUTPUT_SET_PROTOCOL          => 0x21,
-  RCOUTPUT_SET_PULSE_LENGTH      => 0x22,
-  RCOUTPUT_SET_REPEAT_TRANSMIT   => 0x24,
+  RCOUTPUT_PROTOCOL          => 0x11,
+  RCOUTPUT_PULSE_LENGTH      => 0x12,
+  RCOUTPUT_REPEAT_TRANSMIT   => 0x14,
+  
+  RCOUTPUT_CODE_TRISTATE     => 0x21,
+#  RCOUTPUT_CODE_LONG         => 0x22,
+#  RCOUTPUT_CODE_CHAR         => 0x24,
 };
 
 our $RCOUTPUT_TRISTATE_BITS = {
@@ -1012,41 +1015,74 @@ sub handle_encoder_response {
   return \@retval;
 }
 
-sub packet_rcoutput_code {
+# Packet to send a tristate code to the microcontroller
+#
+# Content:
+#  0: command 'RC_DATA'
+#  1: pin
+#  2: subcommand 'RCOUTPUT_CODE_TRISTATE'
+#  3..n: tristate code (4 tristate bits per byte, packed as 7-bit)
+sub packet_rcoutput_code_tristate {
   my ( $self, $pin, @code ) = @_;
   
+  # @code is a list of values from RCOUTPUT_TRISTATE_BITS
   my @transferSymbols = @code;
+  
+  # 4 tristate bits per byte will be sent to the microcontroller;
+  # the last byte has to be filled up with value-less data
   while ((@transferSymbols & 0x03) != 0) {
     push @transferSymbols, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_RESERVED};
   }
 
+  # pack each 4 tristate bits into 1 byte
   my @transferCode = ();
   for (my $i = 0; $i < @transferSymbols; $i++) {
     if (($i & 0x03) eq 0) { # add a new empty byte every 4th tristate bit
       push @transferCode, 0;
     }
-    push @transferCode, set_tristate_bit(pop(@transferCode), $i, $transferSymbols[$i]);
+    push @transferCode,
+         set_tristate_bit(pop(@transferCode), $i, $transferSymbols[$i]);
   }
 
   return $self->packet_sysex_command( 'RC_DATA',
                                       $pin,
-                                      $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_TRISTATE_CODE},
+                                      $RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_TRISTATE},
                                       pack_as_7bit(@transferCode)
                                     );
 }
 
+# Packet to change a parameter of a RC sender
+#
+# Content:
+#  0: command 'RC_DATA'
+#  1: pin
+#  2: subcommand, one of $RCOUTPUT_COMMANDS
+#  3, 4: an int as value for the parameter
 sub packet_rcoutput_parameter {
   my ( $self, $pin, $name, $value ) = @_;
   my @message_bytes = ($value & 0xFF, ($value>>8) & 0xFF);
-  return $self->packet_sysex_command( 'RC_DATA', $pin, $name, pack_as_7bit(@message_bytes) );
+  return $self->packet_sysex_command( 'RC_DATA',
+                                      $pin,
+                                      $name,
+                                      pack_as_7bit(@message_bytes) );
 }
 
+# Processes a message from the microcontroller
+#
+# Content:
+#  pin: RC pin
+#  command: one of $RCOUTPUT_COMMANDS
+#  value: data from the microcontroller
 sub handle_rc_response {
   my ( $self, $sysex_data ) = @_;
   my $pin     = shift @$sysex_data;
   my $command = shift @$sysex_data;
   my @value  = unpack_from_7bit(@$sysex_data);
-  if ($command eq $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_TRISTATE_CODE}) {
+  if ($command eq $RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_TRISTATE}) {
+    # unpack tristates bits:
+    # the microcontroller sends 4 tristate bits per byte,
+    # the result will contain a list of tristate bits
+    # (form $RCOUTPUT_TRISTATE_BITS)
     foreach (0..@value-1) {
       my $byte = shift @value;
       foreach (0..3) {
@@ -1057,12 +1093,14 @@ sub handle_rc_response {
   return { pin => $pin, command => $command, value => \@value };
 }
 
+# extract tristate bit from byte (containing 4 tristate bits)
 sub get_tristate_bit {
   my ( $byte, $index ) = @_;
   my $shift = 2 * ($index & 0x03);
   return (($byte << $shift) >> 6) & 0x03;
 }
 
+# set a tristate bit (2 bit) within a byte
 sub set_tristate_bit {
   my ( $byte, $index, $tristateValue ) = @_;
   my $shift = 6-(2*($index & 0x03));
