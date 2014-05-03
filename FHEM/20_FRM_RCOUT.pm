@@ -18,7 +18,7 @@ use Device::Firmata::Constants  qw/ :all /;
 #####################################
 
 my %sets = (
-  "code"             => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_CODE},
+  "code"             => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_TRISTATE_CODE},
 );
 
 my %attributes = (
@@ -119,8 +119,8 @@ sub FRM_RCOUT_observer
 COMMAND_HANDLER: {
     defined($s{$key}) and do {
       my %tristateChars = reverse(%tristateBits);
-      my $tristateCode = join("", map {$tristateChars{$_}} @$value); 
-     Log3 $name, 4, "$s{$key}: $tristateCode";
+      my $tristateCode = join("", map { my $v = $tristateChars{$_}; defined $v ? $v : "X";} @$value); 
+      Log3 $name, 4, "$s{$key}: $tristateCode";
       main::readingsSingleUpdate($hash, $s{$key}, $tristateCode, 1);
       last;
     };

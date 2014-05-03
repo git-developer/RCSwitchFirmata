@@ -94,16 +94,17 @@ our $ENCODER_COMMANDS = {
 };
 
 our $RCOUTPUT_COMMANDS = {
-  RCOUTPUT_SEND_CODE             => 0x10,
+  RCOUTPUT_SEND_TRISTATE_CODE    => 0x10,
   RCOUTPUT_SET_PROTOCOL          => 0x21,
   RCOUTPUT_SET_PULSE_LENGTH      => 0x22,
   RCOUTPUT_SET_REPEAT_TRANSMIT   => 0x24,
 };
 
 our $RCOUTPUT_TRISTATE_BITS = {
-  TRISTATE_0 => 0,
-  TRISTATE_F => 1,
-  TRISTATE_1 => 3,
+  TRISTATE_0        => 0,
+  TRISTATE_F        => 1,
+  TRISTATE_RESERVED => 2,
+  TRISTATE_1        => 3,
 };
 
 our $MODENAMES = {
@@ -1013,10 +1014,24 @@ sub handle_encoder_response {
 
 sub packet_rcoutput_code {
   my ( $self, $pin, @code ) = @_;
+  
+  my @transferSymbols = @code;
+  while ((@transferSymbols & 0x03) != 0) {
+    push @transferSymbols, $RCOUTPUT_TRISTATE_BITS->{TRISTATE_RESERVED};
+  }
+
+  my @transferCode = ();
+  for (my $i = 0; $i < @transferSymbols; $i++) {
+    if (($i & 0x03) eq 0) { # add a new empty byte every 4th tristate bit
+      push @transferCode, 0;
+    }
+    push @transferCode, set_tristate_bit(pop(@transferCode), $i, $transferSymbols[$i]);
+  }
+
   return $self->packet_sysex_command( 'RC_DATA',
                                       $pin,
-                                      $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_CODE},
-                                      pack_as_7bit(@code)
+                                      $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_TRISTATE_CODE},
+                                      pack_as_7bit(@transferCode)
                                     );
 }
 
@@ -1031,7 +1046,30 @@ sub handle_rc_response {
   my $pin     = shift @$sysex_data;
   my $command = shift @$sysex_data;
   my @value  = unpack_from_7bit(@$sysex_data);
+  if ($command eq $RCOUTPUT_COMMANDS->{RCOUTPUT_SEND_TRISTATE_CODE}) {
+    foreach (0..@value-1) {
+      my $byte = shift @value;
+      foreach (0..3) {
+        push @value, get_tristate_bit($byte, $_);
+      }
+    }
+  }
   return { pin => $pin, command => $command, value => \@value };
+}
+
+sub get_tristate_bit {
+  my ( $byte, $index ) = @_;
+  my $shift = 2 * ($index & 0x03);
+  return (($byte << $shift) >> 6) & 0x03;
+}
+
+sub set_tristate_bit {
+  my ( $byte, $index, $tristateValue ) = @_;
+  my $shift = 6-(2*($index & 0x03));
+  my $value = ($tristateValue & 0x03) << $shift;
+  my $clear = ~(3 << (6-(2*$index))) & 0xFF;
+  my $result = ($byte & $clear) | $value;
+  return $result;
 }
 
 sub shift14bit {

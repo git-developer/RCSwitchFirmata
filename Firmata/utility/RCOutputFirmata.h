@@ -49,9 +49,12 @@ private:
   void attach(byte pin);
   void detach(byte pin);
 
-  void convert(byte *tristateBytes, byte length, char* tristateCode);
-  void convert(char* tristateCode, byte length, byte *tristateBytes);
+  byte unpack(byte *tristateBytes, byte length, char* tristateCode);
+  byte pack(char* tristateCode, byte length, byte *tristateBytes);
 
+  char getTristateChar(byte tristateByte, byte index);
+  byte setTristateBit(byte tristateByte, byte index, char tristateChar);
+  
   void sendReply(byte pin, byte subcommand, byte length, byte *data);
   void debugLog(String name, int value);
 };

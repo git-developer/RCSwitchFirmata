@@ -74,18 +74,12 @@ boolean RCOutputFirmata::handleSysex(byte command, byte argc, byte *argv)
   Encoder7Bit.readBinary(length, data, data);
   int value = *(int*) data;
 
-  /*
-   * This if-else statement should not be changed to a switch
-   * because the board doesn't respond anymore after the first
-   * run of this method.
-   */
-  if (subcommand == SEND_CODE) { 
-    char tristateCode[length];
-    convert(data, length, tristateCode);
+  if (subcommand == SEND_CODE) { // sketch crashes if changed to a switch-statement ?!
+    char tristateCode[length*4];
+    byte charCount = unpack(data, length, tristateCode);
     sender->sendTriState(tristateCode);
-    convert(tristateCode, length, data);
+    length = pack(tristateCode, charCount, data);
   } else {
-    int value = *(int*) data;
     if (subcommand == SET_PROTOCOL) {
       sender->setProtocol(value);
     } else if (subcommand == SET_PULSE_LENGTH) {
@@ -121,28 +115,51 @@ void RCOutputFirmata::detach(byte pin)
   }
 }
 
-void RCOutputFirmata::convert(byte *tristateBytes, byte length, char* tristateCode)
+byte RCOutputFirmata::unpack(byte *tristateBytes, byte length, char* tristateCode)
 {
-  for (int i = 0; i < length; i++) {
-    switch (tristateBytes[i]) {
-      case TRISTATE_0: tristateCode[i] = '0'; break;
-      case TRISTATE_F: tristateCode[i] = 'F'; break;
-      case TRISTATE_1: tristateCode[i] = '1'; break;
-      default:         tristateCode[i] = 'X';
+  byte charCount = 0;
+  for (byte i = 0; i < length; i++) {
+    for (byte j = 0; j < 4; j++) {
+      tristateCode[charCount++] = getTristateChar(tristateBytes[i], j);
     }
   }
+  return charCount;
 }
 
-void RCOutputFirmata::convert(char* tristateCode, byte length, byte *tristateBytes)
+byte RCOutputFirmata::pack(char* tristateCode, byte length, byte *tristateBytes)
 {
-  for (int i = 0; i < length; i++) {
-    switch (tristateCode[i]) {
-      case '0': tristateBytes[i] = TRISTATE_0; break;
-      case 'F': tristateBytes[i] = TRISTATE_F; break;
-      case '1': tristateBytes[i] = TRISTATE_1; break;
-      default:  tristateBytes[i] = TRISTATE_RESERVED;
-    }
+  byte count = 0;
+  for (; count < length; count++) {
+    tristateBytes[count/4] = setTristateBit(tristateBytes[count/4], count & 0x03, tristateCode[count]);
   }
+  for (; (count & 0x03) != 0; count++) { // fill last byte if necessary
+    tristateBytes[count/4] = setTristateBit(tristateBytes[count/4], count & 0x03, TRISTATE_RESERVED);
+  }
+  return count/4;
+}
+
+char RCOutputFirmata::getTristateChar(byte tristateByte, byte index) {
+  char c = 'X';
+  byte shift = 2*(index & 0x03);
+  byte tristateBit = ((tristateByte << shift) >> 6) & 0x3;
+  switch (tristateBit) {
+    case TRISTATE_0: c = '0'; break;
+    case TRISTATE_F: c = 'F'; break;
+    case TRISTATE_1: c = '1'; break;
+  }
+  return c;
+}
+
+byte RCOutputFirmata::setTristateBit(byte tristateByte, byte index, char tristateChar) {
+  byte shift = 6-(2*index);
+  byte clear = ~(0x03 << shift);
+  byte tristateBit = TRISTATE_RESERVED;
+  switch (tristateChar) {
+    case '0': tristateBit = TRISTATE_0; break;
+    case 'F': tristateBit = TRISTATE_F; break;
+    case '1': tristateBit = TRISTATE_1; break;
+  }
+  return (tristateByte & clear) | (tristateBit << shift);
 }
 
 void RCOutputFirmata::sendReply(byte pin, byte subcommand, byte length, byte *data)
