@@ -1,9 +1,9 @@
 /*
   RCOutputFirmata.cpp - Firmata library
 
-  Version: DEVELOPMENT SNAPSHOT
-  Date:    2014-05-03
-  Author:  fhem-user ( http://forum.fhem.de/index.php?action=emailuser;sa=email;uid=1713 )
+  Version: 1.0-SNAPSHOT
+  Date:    2014-05-16
+  Author:  git-developer ( https://github.com/git-developer )
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
 void RCOutputFirmata::handleCapability(byte pin)
 {
   if (IS_PIN_DIGITAL(pin)) {
-    Firmata.write(PINMODE_RC_TRANSMIT);
+    Firmata.write(RC_SEND);
     Firmata.write(1); // data doesn't have a fixed resolution
   }
 }
@@ -27,7 +27,7 @@ void RCOutputFirmata::handleCapability(byte pin)
 boolean RCOutputFirmata::handlePinMode(byte pin, int mode)
 {
   if (IS_PIN_DIGITAL(pin)) {
-    if (mode == PINMODE_RC_TRANSMIT) {
+    if (mode == RC_SEND) {
       attach(pin);
       return true;
     } else {
@@ -48,11 +48,12 @@ void RCOutputFirmata::reset()
 
 boolean RCOutputFirmata::handleSysex(byte command, byte argc, byte *argv)
 {
-  /* required: pin, subcommand, value */
-  if (command != SYSEX_COMMAND_RC_DATA || argc <= 2) {
+  /* required: subcommand, pin, value */
+  if (command != RC_DATA || argc <= 2) {
     return false;
   }
-  byte pin = argv[0];
+  byte subcommand = argv[0];
+  byte pin = argv[1];
   if (Firmata.getPinMode(pin) == IGNORE) {
     return false;
   }
@@ -70,26 +71,22 @@ boolean RCOutputFirmata::handleSysex(byte command, byte argc, byte *argv)
     return false;
   }
   
-  byte subcommand = argv[1];
   byte *data = (byte*) argv+2;
-  Encoder7Bit.readBinary(length, data, data);
+  Encoder7Bit.readBinary(length, data, data); // decode in-place
   int value = *(int*) data;
 
   switch (subcommand) {
     case CONFIG_PROTOCOL:        { sender->setProtocol(value); break; }
     case CONFIG_PULSE_LENGTH:    { sender->setPulseLength(value); break; }
     case CONFIG_REPEAT_TRANSMIT: { sender->setRepeatTransmit(value); break; }
-    case CODE_TRISTATE: { 
-      char tristateCode[length*4];
-      byte charCount = unpack(data, length, tristateCode);
-      sender->sendTriState(tristateCode);
-      length = pack(tristateCode, charCount, data);
-      break;
-    }
-    default: { subcommand = UNKNOWN; }
+    case CODE_TRISTATE:          { length = sendTristate(sender, data); break; }
+    case CODE_LONG:              { length = sendLong(sender, data); break; }
+    case CODE_CHAR:              { length = sendString(sender, data); break; }
+    case CODE_TRISTATE_PACKED:   { length = sendPackedTristate(sender, data, length); break; } 
+    default:                     { subcommand = UNKNOWN; }
   }
-  sendMessage(pin, subcommand, length, data);
-  return true;
+  sendMessage(subcommand, pin, length, data);
+  return subcommand != UNKNOWN;
 }
 
 void RCOutputFirmata::attach(byte pin)
@@ -110,6 +107,36 @@ void RCOutputFirmata::detach(byte pin)
     free(sender);
     senders[pin]=NULL;
   }
+}
+
+byte RCOutputFirmata::sendTristate(RCSwitch *sender, byte *data)
+{
+  char* code = (char*) data;
+  sender->sendTriState(code);
+  return strlen(code);
+}
+
+byte RCOutputFirmata::sendPackedTristate(RCSwitch *sender, byte *data, byte length)
+{
+  char tristateCode[length*4]; // 4 tristate bits per byte
+  byte charCount = unpack(data, length, tristateCode);
+  sender->sendTriState(tristateCode);
+  return pack(tristateCode, charCount, data);
+}
+
+byte RCOutputFirmata::sendLong(RCSwitch *sender, byte *data)
+{
+  unsigned int bitCount = *(unsigned int*) data;
+  unsigned long code    = *(unsigned long*) (data+2);
+  sender->send(code, bitCount);
+  return 6; // 2 bytes bitCount + 4 bytes code
+}
+
+byte RCOutputFirmata::sendString(RCSwitch *sender, byte *data)
+{
+  char* code = (char*) data;
+  sender->send(code);
+  return strlen(code);
 }
 
 byte RCOutputFirmata::unpack(byte *tristateBytes, byte length, char* tristateCode)
@@ -141,7 +168,8 @@ byte RCOutputFirmata::pack(char* tristateCode, byte length, byte *tristateBytes)
   return count/4;
 }
 
-char RCOutputFirmata::getTristateChar(byte tristateByte, byte index) {
+char RCOutputFirmata::getTristateChar(byte tristateByte, byte index)
+{
 
   /* 
    * An invalid character is used as default
@@ -158,7 +186,8 @@ char RCOutputFirmata::getTristateChar(byte tristateByte, byte index) {
   return c;
 }
 
-byte RCOutputFirmata::setTristateBit(byte tristateByte, byte index, char tristateChar) {
+byte RCOutputFirmata::setTristateBit(byte tristateByte, byte index, char tristateChar)
+{
   byte shift = 6-(2*index); // 6, 4, 2 or 0
   byte clear = ~(0x03 << shift); // bitmask to clear the requested 2 bits
   byte tristateBit = TRISTATE_RESERVED;
@@ -168,16 +197,16 @@ byte RCOutputFirmata::setTristateBit(byte tristateByte, byte index, char tristat
     case '1': tristateBit = TRISTATE_1; break;
   }
   
-  /* remove the requested tristate bit and set it afterwards */
+  /* remove old data from the requested position and set the tristate bit */
   return (tristateByte & clear) | (tristateBit << shift);
 }
 
-void RCOutputFirmata::sendMessage(byte pin, byte subcommand, byte length, byte *data)
+void RCOutputFirmata::sendMessage(byte subcommand, byte pin, byte length, byte *data)
 {
   Firmata.write(START_SYSEX);
-  Firmata.write(SYSEX_COMMAND_RC_DATA);
-  Firmata.write(pin);
+  Firmata.write(RC_DATA);
   Firmata.write(subcommand);
+  Firmata.write(pin);
   Encoder7Bit.startBinaryWrite();
   for (int i = 0; i < length; i++) {
     Encoder7Bit.writeBinary(data[i]);

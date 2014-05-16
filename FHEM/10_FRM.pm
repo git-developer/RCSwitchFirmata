@@ -49,6 +49,7 @@ my @clients = qw(
   I2C_BMP180
   FRM_LCD
   FRM_RCOUT
+  FRM_RCIN
 );
 
 #####################################
@@ -361,7 +362,7 @@ sub FRM_DoInit($) {
 	$device->observe_string(\&FRM_string_observer,$shash);
 	
 	my $found; # we cannot call $device->probe() here, as it doesn't select bevore read, so it would likely cause IODev to close the connection on the first attempt to read from empty stream
-	my $endTicks = time+5;
+	my $endTicks = time+7;
 	my $queryTicks = time+2;
 	$device->system_reset();
 	do {
@@ -396,6 +397,8 @@ sub FRM_DoInit($) {
 					$main::defs{$name}{stepper_pins} = join(",", sort{$a<=>$b}(@$stepperpins)) if (defined $stepperpins and scalar @$stepperpins);
 					my $rcoutputpins = $device->{metadata}{rcoutput_pins};
 					$main::defs{$name}{rcoutput_pins} = join(",", sort{$a<=>$b}(@$rcoutputpins)) if (defined $rcoutputpins and scalar @$rcoutputpins);
+					my $rcinputpins = $device->{metadata}{rcinput_pins};
+					$main::defs{$name}{rcinput_pins} = join(",", sort{$a<=>$b}(@$rcinputpins)) if (defined $rcinputpins and scalar @$rcinputpins);
 					if (defined $device->{metadata}{analog_resolutions}) {
 						my @analog_resolutions;
 						foreach my $pin (sort{$a<=>$b}(keys %{$device->{metadata}{analog_resolutions}})) {
@@ -1018,7 +1021,8 @@ sub FRM_OWX_Discover ($) {
    to Arduino supporting the <a href="http://en.wikipedia.org/wiki/I%C2%B2C">
    i2c-protocol</a>.<br>
   <a href="#OWX">OWX</a> to read/write sensors and actors on 1-Wire bus.<br>
-  <a href="#FRM_RCOUT">FRM_RCOUT</a> for radio control senders<br><br>
+  <a href="#FRM_RCOUT">FRM_RCOUT</a> for radio control senders<br>
+  <a href="#FRM_RCIN">FRM_RCIN</a> for radio control receivers<br><br>
    
   Each client stands for a Pin of the Arduino configured for a specific use 
   (digital/analog in/out) or an integrated circuit connected to Arduino by i2c.<br><br>
