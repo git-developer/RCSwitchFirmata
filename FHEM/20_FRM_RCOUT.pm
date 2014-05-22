@@ -66,7 +66,7 @@ FRM_RCOUT_Init($$)
     FRM_RCOUT_Attr("set", $name, "defaultBitCount", $attributes{"defaultBitCount"});
     foreach my $attribute (keys %attributes) { # send attribute values to the board
       if ($main::attr{$name}{$attribute}) {
-        FRM_RCIN_apply_attribute($hash, $attribute);
+        FRM_RCOUT_apply_attribute($hash, $attribute);
       }
     }
   };

@@ -77,28 +77,28 @@ const byte mac[] = {0x90,0xA2,0xDA,0x0D,0x07,0x02};
 #include <utility/DigitalInputFirmata.h>
 DigitalInputFirmata digitalInput;
 
-//#include <utility/DigitalOutputFirmata.h>
-//DigitalOutputFirmata digitalOutput;
+#include <utility/DigitalOutputFirmata.h>
+DigitalOutputFirmata digitalOutput;
 
-//#include <utility/AnalogInputFirmata.h>
-//AnalogInputFirmata analogInput;
+#include <utility/AnalogInputFirmata.h>
+AnalogInputFirmata analogInput;
 
 #include <utility/AnalogOutputFirmata.h>
 AnalogOutputFirmata analogOutput;
 
 #include <Servo.h> //wouldn't load from ServoFirmata.h in Arduino1.0.3
-//#include <utility/ServoFirmata.h>
-//ServoFirmata servo;
+#include <utility/ServoFirmata.h>
+ServoFirmata servo;
 
 #include <Wire.h> //wouldn't load from I2CFirmata.h in Arduino1.0.3
-//#include <utility/I2CFirmata.h>
-//I2CFirmata i2c;
+#include <utility/I2CFirmata.h>
+I2CFirmata i2c;
 
-//#include <utility/OneWireFirmata.h>
-//OneWireFirmata oneWire;
+#include <utility/OneWireFirmata.h>
+OneWireFirmata oneWire;
 
-//#include <utility/StepperFirmata.h>
-//StepperFirmata stepper;
+#include <utility/StepperFirmata.h>
+StepperFirmata stepper;
 
 #include <RCSwitch.h> //wouldn't load from I2CFirmata.h in Arduino1.0.3
 #include <utility/RCOutputFirmata.h>
@@ -111,11 +111,11 @@ RCInputFirmata rcInput;
 #include <utility/FirmataExt.h>
 FirmataExt firmataExt;
 
-//#include <utility/FirmataScheduler.h>
-//FirmataScheduler scheduler;
+#include <utility/FirmataScheduler.h>
+FirmataScheduler scheduler;
 
-//#include <utility/EncoderFirmata.h>
-//EncoderFirmata encoder;
+#include <utility/EncoderFirmata.h>
+EncoderFirmata encoder;
 
 
 // dependencies. Do not comment out the following lines
