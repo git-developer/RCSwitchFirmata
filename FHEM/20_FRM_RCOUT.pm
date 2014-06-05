@@ -49,11 +49,19 @@ FRM_RCOUT_Initialize($)
   $hash->{AttrFn}    = "FRM_RCOUT_Attr";
   
   $hash->{AttrList}  = "IODev " . join(" ", keys %attributes) . " $main::readingFnAttributes";
-  main::LoadModule("FRM");
+  main::LoadModule("FRM_RC");
 }
 
 sub
 FRM_RCOUT_Init($$)
+{
+  my ($hash, $args) = @_;
+  FRM_RC_Init($hash, PIN_RCOUTPUT, \&FRM_RCOUT_observer, @attributes, %rcswitchParameters, %moduleParameters, $args);
+  FRM_RCOUT_Attr("set", $hash->{NAME}, "defaultBitCount", $moduleParameters{"defaultBitCount"});
+}
+
+sub
+FRM_RCOUT_Init_2($$)
 {
   my ($hash, $args) = @_;
   my $ret = FRM_Init_Pin_Client($hash, $args, PIN_RCOUTPUT);
@@ -66,7 +74,7 @@ FRM_RCOUT_Init($$)
     FRM_RCOUT_Attr("set", $name, "defaultBitCount", $attributes{"defaultBitCount"});
     foreach my $attribute (keys %attributes) { # send attribute values to the board
       if ($main::attr{$name}{$attribute}) {
-        FRM_RCOUT_apply_attribute($hash, $attribute);
+        FRM_RCIN_apply_attribute($hash, $attribute);
       }
     }
   };
