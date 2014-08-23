@@ -4,22 +4,22 @@ package main;
 use strict;
 use warnings;
 
-#add FHEM/lib to @INC if it's not allready included. Should rather be in fhem.pl than here though...
-BEGIN {
-	if (!grep(/FHEM\/lib$/,@INC)) {
-		foreach my $inc (grep(/FHEM$/,@INC)) {
-			push @INC,$inc."/lib";
-		};
-	};
-};
-
-use Device::Firmata::Constants  qw/ :all /;
-
 #####################################
 
-my %attributes = (
-  "tolerance"        => $Device::Firmata::Protocol::RCINPUT_COMMANDS->{RCINPUT_TOLERANCE},
-  "rawDataEnabled"   => $Device::Firmata::Protocol::RCINPUT_COMMANDS->{RCINPUT_RAW_DATA},
+use constant {
+  PINMODE_RCINPUT  => 11,
+
+  RCINPUT_TOLERANCE             => 0x31,
+  RCINPUT_RAW_DATA              => 0x32,
+  RCINPUT_MESSAGE               => 0x41,
+};
+
+my %rcswitchAttributes = (
+  "tolerance"        => RCINPUT_TOLERANCE,
+  "rawDataEnabled"   => RCINPUT_RAW_DATA,
+);
+
+my %moduleAttributes = (
 );
 
 sub
@@ -28,78 +28,52 @@ FRM_RCIN_Initialize($)
   my ($hash) = @_;
 
   $hash->{DefFn}     = "FRM_Client_Define";
-  $hash->{InitFn}    = "FRM_RCIN_Init";
   $hash->{UndefFn}   = "FRM_Client_Undef";
+  $hash->{InitFn}    = "FRM_RCIN_Init";
   $hash->{AttrFn}    = "FRM_RCIN_Attr";
   
-  $hash->{AttrList}  = "IODev " . join(" ", keys %attributes) . " " . $readingFnAttributes;
-  LoadModule("FRM");
+  LoadModule("FRM_RC");
+
+  $hash->{AttrList}  = "IODev"
+                       . " " . join(" ", keys %rcswitchAttributes)
+                       . " " . join(" ", keys %main::rcAttributes)
+                       . " " . $main::readingFnAttributes;
 }
 
 sub
 FRM_RCIN_Init($$)
 {
   my ($hash, $args) = @_;
-  my $ret = FRM_Init_Pin_Client($hash, $args, PIN_RCINPUT);
-  return $ret if (defined $ret);
-  my $pin = $hash->{PIN};
-  eval {
-    my $firmata = FRM_Client_FirmataDevice($hash);
-    $firmata->observe_rc($pin, \&FRM_RCIN_observer, $hash);
-    foreach my $a (keys %attributes) { # send attribute values to the board
-      FRM_RCIN_apply_attribute($hash, $a) if $attr{$hash->{NAME}}{$a}
-    }
-  };
-  return FRM_Catch($@) if $@;
-  readingsSingleUpdate($hash, "state", "Initialized", 1);
-  return undef;
+  FRM_RC_Init($hash, PINMODE_RCINPUT, \&FRM_RCIN_handle_rc_response, \%rcswitchAttributes, \%moduleAttributes, $args);
 }
 
 sub
 FRM_RCIN_Attr($$$$) {
-  my ($command,$name,$attribute,$value) = @_;
-  my $hash = $main::defs{$name};
-  eval {
-    if ($command eq "set") {
-      ARGUMENT_HANDLER: {
-        $attribute eq "IODev" and do {
-          if ($main::init_done and (!defined ($hash->{IODev}) or $hash->{IODev}->{NAME} ne $value)) {
-            FRM_Client_AssignIOPort($hash,$value);
-            FRM_Init_Client($hash) if (defined ($hash->{IODev}));
-          }
-          last;
-        };
-        defined($attributes{$attribute}) and do {
-          $main::attr{$name}{$attribute}=$value; # store value, but don't send it to the the board until everything is up
-          if ($main::init_done) {
-            FRM_RCIN_apply_attribute($hash,$attribute);
-          }
-          last;
-        };
-      }
-    }
-  };
-  my $ret = FRM_Catch($@) if $@;
-  if ($ret) {
-    $hash->{STATE} = "error setting $attribute to $value: ".$ret;
-    return "cannot $command attribute $attribute to $value for $name: ".$ret;
-  }
-  return undef;
+  my ($command, $name, $attribute, $value) = @_;
+  return FRM_RC_Attr($command, $name, $attribute, $value, \%rcswitchAttributes);
 }
 
-# The attribute is not applied within this module; instead, it is sent to the
-# microcontroller. When the change was successful, a response message will
-# arrive in the observer sub.
-sub FRM_RCIN_apply_attribute { # TODO this one is identical to FRM_RCOUT_apply_attribute, merge
-  my ($hash,$attribute) = @_;
-  my $name = $hash->{NAME};
+sub FRM_RCIN_handle_rc_response {
+  my ( $hash, $command, @data ) = @_;
 
-  return "Unknown attribute $attribute, choose one of " . join(" ", sort keys %attributes)
-  	if(!defined($attributes{$attribute}));
+  if ($command eq RCINPUT_MESSAGE) {
+    my $value   = ((shift @data) << 24) + ((shift @data) << 16)
+                  + ((shift @data) <<  8) + (shift @data);
+    my $bitCount  = ((shift @data) <<  8) + (shift @data);
+    my $delay     = ((shift @data) <<  8) + (shift @data);
+    my $protocol  = ((shift @data) <<  8) + (shift @data);
+    my $tristateCode = FRM_RCIN_long_to_tristate_code($value, $bitCount);
+    my @rawData = ();
+    while (@data > 1) {
+      push @rawData, (shift @data) + ((shift @data) << 8);
+    }
+    @data = ($value, $bitCount, $delay, $protocol, $tristateCode, \@rawData);
 
-  FRM_Client_FirmataDevice($hash)->rc_set_parameter($attributes{$attribute},
-                                                    $hash->{PIN},
-                                                    $main::attr{$name}{$attribute});
+  } else { # parameter as int
+      push @data, (shift @data) + ((shift @data) << 8);
+  }
+
+  FRM_RCIN_observer($command, \@data, $hash);
 }
 
 sub FRM_RCIN_observer
@@ -107,24 +81,25 @@ sub FRM_RCIN_observer
   my ( $key, $value, $hash ) = @_;
   my $name = $hash->{NAME};
   
-  my %a = reverse(%attributes);
+  my %a = reverse(%rcswitchAttributes);
   my $attrName = $a{$key};
   
 COMMAND_HANDLER: {
-    ($key eq $Device::Firmata::Protocol::RCINPUT_COMMANDS->{RCINPUT_MESSAGE}) and do {
+    ($key eq RCINPUT_MESSAGE) and do {
 
       my ($longCode, $bitCount, $delay, $protocol, $tristateCode, $rawData) = @$value;
       my $rawInt = join(" ", @$rawData);
       my $rawHex = join(" ", map { sprintf "%04X", $_ } @$rawData);
 
-      Log3 $hash, 4, "message: " . join(", ", @$value);
-      if ($main::attr{$name}{"verbose"} > 3) {
+      Log3($hash, 4, "message: " . join(", ", @$value));
+      my $verboseLevel = $main::attr{$name}{"verbose"};
+      if (defined $verboseLevel and $verboseLevel > 3) {
         my $s = $rawHex;
         my $rawBlock = "";
         while ($s) {
           $rawBlock .= substr($s, 0, 40, '')."\n";
         }
-        Log3 $hash, 4, "raw data:\n" . $rawBlock;
+        Log3($hash, 4, "raw data:\n" . $rawBlock);
       }
       
       readingsBeginUpdate($hash);
@@ -141,7 +116,7 @@ COMMAND_HANDLER: {
     };
     defined($attrName) and do {
       $value = shift @$value;
-      Log3 $name, 4, "$attrName: $value";
+      Log3($name, 4, "$attrName: $value");
 
       $main::attr{$name}{$attrName}=$value;
       # TODO refresh web GUI somehow?
@@ -149,6 +124,17 @@ COMMAND_HANDLER: {
     };
 };
 }
+
+sub FRM_RCIN_long_to_tristate_code {
+  my ($value, $bitCount) = @_;
+  my @tristateBits;
+  for (my $shift = $bitCount-2; $shift >= 0; $shift-=2) {
+    push @tristateBits, ($value >> $shift) & 3;
+  }
+  my $tristateCode = FRM_RC_get_tristate_code(@tristateBits);
+  return $tristateCode;
+}
+
 
 1;
 

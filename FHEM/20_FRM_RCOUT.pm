@@ -4,178 +4,94 @@ package main;
 use strict;
 use warnings;
 
-#add FHEM/lib to @INC if it's not allready included. Should rather be in fhem.pl than here though...
-BEGIN {
-	if (!grep(/FHEM\/lib$/,@INC)) {
-		foreach my $inc (grep(/FHEM$/,@INC)) {
-			push @INC,$inc."/lib";
-		};
-	};
-};
-
-use Device::Firmata::Constants  qw/ :all /;
-
 #####################################
 
+use constant {
+  PINMODE_RCOUTPUT              => 10,
+  
+  RCOUTPUT_PROTOCOL             => 0x11,
+  RCOUTPUT_PULSE_LENGTH         => 0x12,
+  RCOUTPUT_REPEAT_TRANSMIT      => 0x14,
+  
+  RCOUTPUT_CODE_TRISTATE        => 0x21,
+  RCOUTPUT_CODE_LONG            => 0x22,
+  RCOUTPUT_CODE_CHAR            => 0x24,
+  RCOUTPUT_CODE_PACKED_TRISTATE => 0x28,
+};
+
+
+my %gets = (
+  "raw" => 1,
+);
+
 my %sets = (
-  "tristateCode"     => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_PACKED_TRISTATE},
-  "longCode"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_LONG},
-  "charCode"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_CHAR},
+  "tristateCode"     => RCOUTPUT_CODE_PACKED_TRISTATE,
+  "longCode"         => RCOUTPUT_CODE_LONG,
+  "charCode"         => RCOUTPUT_CODE_CHAR,
 );
 
-my %attributes = (
-  "protocol"         => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_PROTOCOL},
-  "pulseLength"      => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_PULSE_LENGTH},
-  "repeatTransmit"   => $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_REPEAT_TRANSMIT},
-  "defaultBitCount"  => 24,
+my %rcswitchAttributes = (
+  "protocol"         => RCOUTPUT_PROTOCOL,
+  "pulseLength"      => RCOUTPUT_PULSE_LENGTH,
+  "repeatTransmit"   => RCOUTPUT_REPEAT_TRANSMIT,
 );
 
-my %tristateBits = (
-  "0" => $Device::Firmata::Protocol::RC_TRISTATE_BITS->{TRISTATE_0},
-  "F" => $Device::Firmata::Protocol::RC_TRISTATE_BITS->{TRISTATE_F},
-  "1" => $Device::Firmata::Protocol::RC_TRISTATE_BITS->{TRISTATE_1},
+my %moduleAttributes = (
+  defaultBitCount  => 24,
 );
+
+my @clients = qw( IT );
 
 sub
 FRM_RCOUT_Initialize($)
 {
   my ($hash) = @_;
 
+  $hash->{DefFn}     = "FRM_Client_Define";
+  $hash->{UndefFn}   = "FRM_Client_Undef";
+  $hash->{InitFn}    = "FRM_RCOUT_Init";
+  $hash->{AttrFn}    = "FRM_RCOUT_Attr";
   $hash->{GetFn}     = "FRM_RCOUT_Get";
   $hash->{SetFn}     = "FRM_RCOUT_Set";
-  $hash->{DefFn}     = "FRM_Client_Define";
-  $hash->{InitFn}    = "FRM_RCOUT_Init";
-  $hash->{UndefFn}   = "FRM_Client_Undef";
-  $hash->{AttrFn}    = "FRM_RCOUT_Attr";
+ 
+  LoadModule("FRM_RC");
   
-  $hash->{AttrList}  = "IODev " . join(" ", keys %attributes) . " $main::readingFnAttributes";
-  main::LoadModule("FRM_RC");
+  $hash->{AttrList}  = "IODev"
+                         . " " . join(" ", keys %rcswitchAttributes)
+                         . " " . join(" ", keys %moduleAttributes)
+                         . " " . join(" ", keys %main::rcAttributes)
+                         . " " . $main::readingFnAttributes;
+
+  $hash->{Clients} = join (':', @clients);
 }
 
 sub
 FRM_RCOUT_Init($$)
 {
   my ($hash, $args) = @_;
-  FRM_RC_Init($hash, PIN_RCOUTPUT, \&FRM_RCOUT_observer, @attributes, %rcswitchParameters, %moduleParameters, $args);
-  FRM_RCOUT_Attr("set", $hash->{NAME}, "defaultBitCount", $moduleParameters{"defaultBitCount"});
+  FRM_RC_Init($hash, PINMODE_RCOUTPUT, \&FRM_RCOUT_handle_rc_response, \%rcswitchAttributes, \%moduleAttributes, $args);
 }
 
 sub
-FRM_RCOUT_Init_2($$)
+FRM_RCOUT_Attr($$$$)
 {
-  my ($hash, $args) = @_;
-  my $ret = FRM_Init_Pin_Client($hash, $args, PIN_RCOUTPUT);
-  return $ret if (defined $ret);
-  my $pin = $hash->{PIN};
-  eval {
-    my $firmata = FRM_Client_FirmataDevice($hash);
-    $firmata->observe_rc($pin, \&FRM_RCOUT_observer, $hash);
-    my $name = $hash->{NAME};
-    FRM_RCOUT_Attr("set", $name, "defaultBitCount", $attributes{"defaultBitCount"});
-    foreach my $attribute (keys %attributes) { # send attribute values to the board
-      if ($main::attr{$name}{$attribute}) {
-        FRM_RCIN_apply_attribute($hash, $attribute);
-      }
-    }
-  };
-  return FRM_Catch($@) if $@;
-  readingsSingleUpdate($hash, "state", "Initialized", 1);
-  return undef;
-}
-
-sub
-FRM_RCOUT_Attr($$$$) {
   my ($command, $name, $attribute, $value) = @_;
-  my $hash = $main::defs{$name};
-  eval {
-    if ($command eq "set") {
-      ARGUMENT_HANDLER: {
-        $attribute eq "IODev" and do {
-          if ($main::init_done and (!defined ($hash->{IODev}) or $hash->{IODev}->{NAME} ne $value)) {
-            FRM_Client_AssignIOPort($hash, $value);
-            FRM_Init_Client($hash) if (defined ($hash->{IODev}));
-          }
-          last;
-        };
-        
-        defined($attributes{$attribute}) and do {
-          $main::attr{$name}{$attribute} = $value;
-          if ($main::init_done) {
-            FRM_RCOUT_apply_attribute($hash,$attribute);
-          }
-          last;
-        };
-        
-      }
-    }
-  };
-  my $ret = FRM_Catch($@) if $@;
-  if ($ret) {
-    $hash->{STATE} = "error setting $attribute to $value: ".$ret;
-    return "cannot $command attribute $attribute to $value for $name: ".$ret;
-  }
-  return undef;
+  return FRM_RC_Attr($command, $name, $attribute, $value, \%rcswitchAttributes);
 }
 
-# The attribute is not applied within this module; instead, it is sent to the
-# microcontroller. When the change was successful, a response message will
-# arrive in the observer sub.
-sub FRM_RCOUT_apply_attribute {
-  my ($hash,$attribute) = @_;
-  my $name = $hash->{NAME};
-
-  return "Unknown attribute $attribute, choose one of " . join(" ", sort keys %attributes)
-  	if(!defined($attributes{$attribute}));
-
-  if ($attribute ne "defaultBitCount") {
-    FRM_Client_FirmataDevice($hash)->rc_set_parameter($attributes{$attribute},
-                                                      $hash->{PIN},
-                                                      $main::attr{$name}{$attribute});
-  }
-}
-
-sub FRM_RCOUT_observer
+# FRM_RCOUT_Get behaves as CUL_Get so that 10_IT can use FRM_RCOUT as IODev
+sub
+FRM_RCOUT_Get($@)
 {
-  my ( $key, $data, $hash ) = @_;
-  my $name = $hash->{NAME};
-  
-  my %s = reverse(%sets);
-  my %a = reverse(%attributes);
-  my $subcommand = $s{$key};
-  my $attrName = $a{$key};
-  
-COMMAND_HANDLER: {
-    defined($subcommand) and do {
-      if ("tristateCode" eq $subcommand) {
-        my $tristateCode = shift @$data;
-        Log3 $name, 4, "$subcommand: $tristateCode";
-        readingsSingleUpdate($hash, $subcommand, $tristateCode, 1);
-      } elsif ("longCode" eq $subcommand) {
-        my $bitCount = shift @$data;
-        my $longCode  = shift @$data;
-        Log3 $name, 4, "$subcommand: $longCode/$bitCount";
-        readingsBeginUpdate($hash);
-        readingsBulkUpdate($hash, $subcommand, $longCode);
-        readingsBulkUpdate($hash, "bitCount", $bitCount);
-        readingsEndUpdate($hash, 1);
-      } elsif ("charCode" eq $subcommand || "tristateString" eq $subcommand) {
-        my $charCode = shift @$data; 
-        Log3 $name, 4, "$subcommand: $charCode";
-        readingsSingleUpdate($hash, $subcommand, $charCode, 1);
-      } else {
-        readingsSingleUpdate($hash, "state", "unknown subcommand $subcommand", 1);
-      }
-      last;
-    };
-    defined($attrName) and do {
-      my $value = shift @$data;
-      Log3 $name, 4, "$attrName: $value";
+  my ($self, $name, $get, $codeCommand) = @_;
 
-      $main::attr{$name}{$attrName}=$value;
-      # TODO refresh web GUI somehow?
-      last;
-    };
-};
+  if(!defined($get) or !defined($gets{$get})) {
+    return undef;
+  }
+
+  my ($code) = $codeCommand =~ /is([01fF]+)/;
+  my $set = FRM_RCOUT_Set($self, $self->{NAME}, "tristateCode", $code);
+  return "raw => $codeCommand";
 }
 
 sub
@@ -185,34 +101,155 @@ FRM_RCOUT_Set($@)
   return "Need at least 2 parameters" if(@a < 2);
   my $command = $sets{$a[1]};
   return "Unknown argument $a[1], choose one of " . join(" ", sort keys %sets)
-  	if(!defined($command));
+    if(!defined($command));
   my @code;
   eval {
-    if ($command eq $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_PACKED_TRISTATE}) {
-      @code = map {$tristateBits{$_}} split("", uc($a[2])); 
-    } elsif ($command eq $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_LONG}) {
+    if ($command eq RCOUTPUT_CODE_PACKED_TRISTATE) {
+      @code = FRM_RC_get_tristate_bits($a[2]);
+    } elsif ($command eq RCOUTPUT_CODE_LONG) {
       my $value = $a[2];
       my $bitCount = $a[3];
-      $bitCount = $attr{$hash->{NAME}}{"defaultBitCount"} if not defined $bitCount;
-      $bitCount = $attributes{"defaultBitCount"} if not defined $bitCount; # if defaultBitCount was deleted
+      $bitCount = $main::attr{$hash->{NAME}}{defaultBitCount} if not defined $bitCount;
+      $bitCount = $moduleAttributes{defaultBitCount} if not defined $bitCount; # if defaultBitCount was deleted
       @code = ($bitCount, $value);
-    } elsif ($command eq $Device::Firmata::Protocol::RCOUTPUT_COMMANDS->{RCOUTPUT_CODE_CHAR}) {
+    } elsif ($command eq RCOUTPUT_CODE_CHAR) {
         @code = map {ord($_)} split("", $a[2]);
     }
-    FRM_Client_FirmataDevice($hash)->rcoutput_send_code($command, $hash->{PIN}, @code);
+     FRM_RCOUT_send_code(FRM_Client_FirmataDevice($hash), $command, $hash->{PIN}, @code);
   };
   return $@;
 }
 
-# FRM_RCOUT_Get behaves as CUL_Get so that 10_IT can use FRM_RCOUT as IODev
-sub
-FRM_RCOUT_Get($@)
-{
-  my ($self, $space, $get, $codeCommand) = @_;
-  my ($code) = $codeCommand =~ /is([01fF]+)/;
-  my $set = FRM_RCOUT_Set($self, $self->{NAME}, "tristateCode", $code);
-  return "raw => $codeCommand";
+sub FRM_RCOUT_handle_rc_response {
+  my ( $hash, $command, @data ) = @_;
+
+  if ($command eq RCOUTPUT_CODE_PACKED_TRISTATE) {
+    # unpack tristates bits:
+    # the microcontroller sends 4 tristate bits per byte,
+    # the result will contain a list of tristate bits
+    foreach (0..@data-1) {
+      my $byte = shift @data;
+      foreach (0..3) {
+        push @data, FRM_RCOUT_get_tristate_bit($byte, $_);
+      }
+    }
+    my $tristateCode = FRM_RC_get_tristate_code(@data);
+    @data = ($tristateCode);
+  } elsif ($command eq RCOUTPUT_CODE_LONG) {
+    push @data, (shift @data) + ((shift @data) << 8);
+    push @data, (shift @data) + ((shift @data) << 8)
+               + ((shift @data) << 16) + ((shift @data) << 24);
+
+  } elsif ($command eq RCOUTPUT_CODE_CHAR) {
+    my $charCode = join("", map { chr($_); } @data);
+    @data = ($charCode);
+  } else { # parameter as int
+      push @data, (shift @data) + ((shift @data) << 8);
+  }
+  
+  FRM_RCOUT_observer($command, \@data, $hash);
 }
+
+sub FRM_RCOUT_observer
+{
+  my ( $key, $data, $hash ) = @_;
+  my $name = $hash->{NAME};
+  
+  my %s = reverse(%sets);
+  my %a = reverse(%rcswitchAttributes);
+  my $subcommand = $s{$key};
+  my $attrName = $a{$key};
+  
+COMMAND_HANDLER: {
+    defined($subcommand) and do {
+      if ("tristateCode" eq $subcommand) {
+        my $tristateCode = shift @$data;
+        Log3($name, 4, "$subcommand: $tristateCode");
+        readingsSingleUpdate($hash, $subcommand, $tristateCode, 1);
+      } elsif ("longCode" eq $subcommand) {
+        my $bitCount = shift @$data;
+        my $longCode  = shift @$data;
+        Log3($name, 4, "$subcommand: $longCode/$bitCount");
+        readingsBeginUpdate($hash);
+        readingsBulkUpdate($hash, $subcommand, $longCode);
+        readingsBulkUpdate($hash, "bitCount", $bitCount);
+        readingsEndUpdate($hash, 1);
+      } elsif ("charCode" eq $subcommand || "tristateString" eq $subcommand) {
+        my $charCode = shift @$data; 
+        Log3($name, 4, "$subcommand: $charCode");
+        readingsSingleUpdate($hash, $subcommand, $charCode, 1);
+      } else {
+        readingsSingleUpdate($hash, "state", "unknown subcommand $subcommand", 1);
+      }
+      last;
+    };
+    defined($attrName) and do {
+      my $value = shift @$data;
+      Log3($name, 4, "$attrName: $value");
+
+      $main::attr{$name}{$attrName}=$value;
+      # TODO refresh web GUI somehow?
+      last;
+    };
+};
+}
+
+sub FRM_RCOUT_send_code {
+  my ( $firmata, $subcommand, $pin, @code ) = @_;
+  my $protocol = $firmata->{protocol};
+main::Log3("sender", 3, "pin $pin: " . join(",", @code));  
+  my @transferCode = ();
+  if ($subcommand eq RCOUTPUT_CODE_PACKED_TRISTATE) {
+  
+    # @code is a list of tristate bits.
+    # 4 tristate bits per byte will be sent to the microcontroller;
+    # the last byte has to be filled up with value-less data
+    my @transferSymbols = FRM_RC_align(@code);
+
+    # pack each 4 tristate bits into 1 byte
+    for (my $i = 0; $i < @transferSymbols; $i++) {
+      if (($i & 0x03) eq 0) { # add a new empty byte every 4th tristate bit
+        push @transferCode, 0;
+      }
+      push @transferCode,
+           FRM_RCOUT_set_tristate_bit(pop(@transferCode), $i, $transferSymbols[$i]);
+    }
+  } elsif ($subcommand eq RCOUTPUT_CODE_LONG) {
+    my ($bitCount, $longCode) = @code;
+    push @transferCode, (($bitCount >> 0) & 0xFF,
+                         ($bitCount >> 8) & 0xFF);
+    push @transferCode, (($longCode >>  0) & 0xFF,
+                         ($longCode >>  8) & 0xFF,
+                         ($longCode >> 16) & 0xFF,
+                         ($longCode >> 24) & 0xFF
+                        );
+  } elsif ($subcommand eq RCOUTPUT_CODE_CHAR) {
+    push @transferCode, @code;
+    push @transferCode, 0; # terminate char[] with null byte
+  } else {
+    die "Unsupported subcommand $subcommand";
+  }
+  
+  return FRM_RC_send_message($firmata, $subcommand, $pin, @transferCode);
+}
+
+# extract tristate bit from byte (containing 4 tristate bits)
+sub FRM_RCOUT_get_tristate_bit {
+  my ( $byte, $index ) = @_;
+  my $shift = 2 * ($index & 0x03);
+  return (($byte << $shift) >> 6) & 0x03;
+}
+
+# set a tristate bit (2 bit) within a byte
+sub FRM_RCOUT_set_tristate_bit {
+  my ( $byte, $index, $tristateValue ) = @_;
+  my $shift = 6-(2*($index & 0x03));
+  my $value = ($tristateValue & 0x03) << $shift;
+  my $clear = ~(3 << (6-(2*$index))) & 0xFF;
+  my $result = ($byte & $clear) | $value;
+  return $result;
+}
+
 
 1;
 
