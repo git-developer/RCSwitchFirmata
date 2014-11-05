@@ -73,7 +73,7 @@ sub
 FRM_RCOUT_Init($$)
 {
   my ($hash, $args) = @_;
-  FRM_RC_Init($hash, PINMODE_RCOUTPUT, \&FRM_RCOUT_handle_rc_response, $args);
+  return FRM_RC_Init($hash, PINMODE_RCOUTPUT, \&FRM_RCOUT_handle_rc_response, $args);
 }
 
 sub FRM_RCOUT_Notify {

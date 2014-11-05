@@ -19,6 +19,12 @@ use constant RCIN_PARAMETERS => {
 };
 use constant RCIN_PARAMETER_NAMES => { reverse(%{RCIN_PARAMETERS()}) };
 
+use constant CLIENTS              => qw( IT );
+
+my %matchListRCIN = (
+	"1:IT" => "^i......\$",
+);
+
 sub
 FRM_RCIN_Initialize($)
 {
@@ -35,13 +41,15 @@ FRM_RCIN_Initialize($)
   $hash->{AttrList} = join(' ', FRM_RCIN_get_attributes(),
                                 keys %{RC_ATTRIBUTES()},
                                 $readingFnAttributes);
+  $hash->{Clients}  = join (':', CLIENTS);
+  $hash->{MatchList} = \%matchListRCIN;
 }
 
 sub
 FRM_RCIN_Init($$)
 {
   my ($hash, $args) = @_;
-  FRM_RC_Init($hash, PINMODE_RCINPUT, \&FRM_RCIN_handle_rc_response, $args);
+  return FRM_RC_Init($hash, PINMODE_RCINPUT, \&FRM_RCIN_handle_rc_response, $args);
 }
 
 sub FRM_RCIN_Notify {
@@ -114,6 +122,8 @@ sub FRM_RCIN_notify
         readingsBulkUpdate($hash, 'rawData', $rawHex);
       }
       readingsEndUpdate($hash, 1);
+ 	  my $icode = sprintf('i%06x', $longCode);
+	  Dispatch($hash, $icode, undef);
       last;
     };
     defined($attrName) and do {
@@ -161,7 +171,7 @@ sub FRM_RCIN_get_user_value($$) {
 sub FRM_RCIN_is_rawdata_enabled($) {
   my $name = shift;
   my $rawData = $attr{$name}{'rawData'};
-  return defined $rawData and $rawData eq 'enabled';	
+  return defined $rawData && $rawData eq 'enabled';	
 }
 
 1;

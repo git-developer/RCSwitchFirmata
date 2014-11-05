@@ -60,7 +60,15 @@ sub
 FRM_RC_Init($$$$)
 {
   my ($hash, $pinmode, $observer_method, $args) = @_;
+  my $protocol_version 
+    = FRM_Client_FirmataDevice($hash)->{protocol}->{protocol_version};
+  if (!defined($COMMANDS->{$protocol_version})) {
+    return
+       "Unsupported firmata protocol version $protocol_version."
+     . " Supported versions: " . join(" ", reverse sort keys %{$COMMANDS});
+  }
   my $name = $hash->{NAME};
+
 
   # Initialize pin for firmata 
   my $ret = FRM_Init_Pin_Client($hash, $args, $pinmode);
