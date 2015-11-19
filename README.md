@@ -107,7 +107,7 @@ To switch your socket, call `set switch on`. To send a tristate code directly wi
 ###Signal quality
 The signal quality depends on the quality of the RF modules and the antenna.
 
-* Each RF module should have an antenna with a length of ? = c<sub>0</sub>/f (speed of light divided by frequency) or a fraction of it. An effective and cheap antenna is a copper wire with the length of ?/4, e.g. 17.4 cm for 433 MHz.
+* Each RF module should have an antenna with a length of λ = c<sub>0</sub>/f (speed of light divided by frequency) or a fraction of it. An effective and cheap antenna is a copper wire with the length of λ/4, e.g. 17.4 cm for 433 MHz.
 * Even very cheap senders (XY-FST, FS1000A) have shown good results.
 * For best results, a superheterodyne receiver (RXB6) is recommended. Very cheap receivers (XY-MK-5V) may work, but this depends on the environment and the sensitivity of controlled devices.
 
