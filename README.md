@@ -54,7 +54,7 @@ RCOutputFirmata rcOutput;
 ```
 
 #### RCInputFirmata
-RCOutputFirmata is required to receive. It is enabled by default:
+RCInputFirmata is required to receive. It is enabled by default:
 
 ```
 #include <RCSwitch.h> //wouldn't load from RCInputFirmata.h in Arduino1.0.3
