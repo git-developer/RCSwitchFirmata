@@ -171,7 +171,7 @@ sub FRM_RCIN_get_user_value($$) {
 sub FRM_RCIN_is_rawdata_enabled($) {
   my $name = shift;
   my $rawData = $attr{$name}{'rawData'};
-  return defined $rawData && $rawData eq 'enabled';	
+  return (defined $rawData) && ($rawData eq 'enabled');
 }
 
 1;
