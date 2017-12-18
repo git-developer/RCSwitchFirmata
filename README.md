@@ -1,5 +1,11 @@
 # RCSwitchFirmata
 
+## Dependencies
+ConfigurableFirmata [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)
+RCSwitch [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)
+perl-firmata [0.63](https://github.com/jnsbyr/perl-firmata)
+fhem with support for Firmata > 2.6 [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev)
+
 ## Description
 *RCSwitchFirmata* is an Arduino sketch that combines [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) and [rc-switch](https://github.com/sui77/rc-switch). It comes with an integration into [FHEM](http://fhem.de).
 

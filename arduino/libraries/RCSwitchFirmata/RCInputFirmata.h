@@ -1,8 +1,8 @@
 /*
   RCInputFirmata.h - Firmata library
 
-  Version: 1.0-SNAPSHOT
-  Date:    2014-08-23
+  Version: 1.0.0-SNAPSHOT
+  Date:    2017-12-13
   Author:  git-developer ( https://github.com/git-developer )
 
   Description
@@ -65,7 +65,7 @@
 #ifndef RCInputFirmata_h
 #define RCInputFirmata_h
 
-#include <utility/FirmataFeature.h>
+#include <FirmataFeature.h>
 #include <RCSwitch.h>
 
 #define RESERVED_COMMAND        0x00             // Sysex command: reserved

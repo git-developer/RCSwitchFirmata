@@ -1,0 +1,41 @@
+##########################################
+# Syntax Coloring Map For RCSwitchFirmata
+##########################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+RCInputFirmata	KEYWORD1
+RCOutputFirmata	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+RESERVED_COMMAND
+RC_DATA
+
+RC_RECEIVE
+UNKNOWN
+CONFIG_TOLERANCE
+CONFIG_ENABLE_RAW_DATA
+MESSAGE
+NO_INTERRUPT -1
+
+RC_SEND
+CONFIG_PROTOCOL
+CONFIG_PULSE_LENGTH
+CONFIG_REPEAT_TRANSMIT
+CODE_TRISTATE
+CODE_LONG
+CODE_CHAR
+CODE_TRISTATE_PACKED
+TRISTATE_0
+TRISTATE_F
+TRISTATE_RESERVED
+TRISTATE_1
