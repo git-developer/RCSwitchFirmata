@@ -1,8 +1,7 @@
 /*
   RCOutputFirmata.h - Firmata library
 
-  Version: 1.0.0-SNAPSHOT
-  Date:    2017-12-13
+  Version: 2.0.0-SNAPSHOT
   Author:  git-developer ( https://github.com/git-developer )
    
   Description
@@ -13,10 +12,10 @@
   Usage
   -----
    1.) Connect a RC receiver to a digital pin of your Arduino board
-   2.) Put RCSwitch into your arduino library directory
+   2.) Add RCSwitchFirmata, ConfigurableFirmata and RCSwitch as arduino libraries
    3.) Include RCOutputFirmata in RCSwitchFirmata
    4.) Upload RCSwitchFirmata and connect Arduino to host
-   5.) Configure the pin to use pin mode RC_SEND
+   5.) Send attach message to configure the pin as RC sender
 
    On success, you may send radio messages from the host. Every message that is
    sent from the host will be echoed back as acknowledgement.
@@ -29,16 +28,24 @@
 
   Parameters
   ----------
+    SETUP_ATTACH:
+     Description:   Configure a pin as RC sender
+     Value space:   Arduino pin numbers
+
+    SETUP_DETACH:
+     Description:   Remove a pin as RC sender
+     Value space:   Arduino pin numbers
+
     CONFIG_PROTOCOL:
      Description:   Set the RCSwitch parameter "protocol"
      Value space:   Defined by RCSwitch (RCSwitch 2.51: 1-3)
      Default value: Defined by RCSwitch (RCSwitch 2.51: 1)
-     
+
     CONFIG_PULSE_LENGTH:
      Description:   Set the RCSwitch parameter "pulse length"
      Value space:   Defined by RCSwitch (RCSwitch 2.51: int)
      Default value: Defined by RCSwitch (RCSwitch 2.51: 350)
-     
+
     CONFIG_REPEAT_TRANSMIT:
      Description:   Set the RCSwitch parameter "repeat transmit"
      Value space:   Defined by RCSwitch (RCSwitch 2.51: int)
@@ -63,8 +70,9 @@
 
   Downloads
   ---------
-   RCSwitchFirmata: https://github.com/firmata/arduino/tree/configurable
-   RCSwitch:        https://code.google.com/p/rc-switch/
+   RCSwitchFirmata:     https://github.com/git-developer/RCSwitchFirmata
+   ConfigurableFirmata: https://github.com/firmata/ConfigurableFirmata
+   RCSwitch:            https://github.com/sui77/rc-switch
 
   License
   -------
@@ -82,13 +90,13 @@
 #include <FirmataFeature.h>
 #include <RCSwitch.h>
 
-#define RESERVED_COMMAND        0x00             // Sysex command: reserved
-#define RC_DATA                 RESERVED_COMMAND // Sysex command: send or receive RC data
-
-#define RC_SEND                 0x0A // pin mode: pin configured for a RC sender
+#define RCSEND_DATA             0x7C // Sysex command: send RC data
 
 /* Subcommands */
 #define UNKNOWN                 0x00
+
+#define SETUP_ATTACH            0x01
+#define SETUP_DETACH            0x02
 
 #define CONFIG_PROTOCOL         0x11
 #define CONFIG_PULSE_LENGTH     0x12
@@ -109,8 +117,6 @@ class RCOutputFirmata:public FirmataFeature
 {
 
 public:
-  boolean handlePinMode(byte pin, int mode);
-  void handleCapability(byte pin);
   
   /**
    * When a command was executed successfully,

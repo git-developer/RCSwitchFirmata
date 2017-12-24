@@ -1,8 +1,7 @@
 /*
   RCOutputFirmata.cpp - Firmata library
 
-  Version: 1.0-SNAPSHOT
-  Date:    2014-08-23
+  Version: 2.0.0-SNAPSHOT
   Author:  git-developer ( https://github.com/git-developer )
 
   This library is free software; you can redistribute it and/or
@@ -16,27 +15,6 @@
 #include "RCOutputFirmata.h"
 #include <Encoder7Bit.h>
 
-void RCOutputFirmata::handleCapability(byte pin)
-{
-  if (IS_PIN_DIGITAL(pin)) {
-    Firmata.write(RC_SEND);
-    Firmata.write(1); // data doesn't have a fixed resolution
-  }
-}
-
-boolean RCOutputFirmata::handlePinMode(byte pin, int mode)
-{
-  if (IS_PIN_DIGITAL(pin)) {
-    if (mode == RC_SEND) {
-      attach(pin);
-      return true;
-    } else {
-      detach(pin);
-    }
-  }
-  return false;
-}
-
 void RCOutputFirmata::reset()
 {
   for (byte pin = 0; pin < TOTAL_PINS; pin++) {
@@ -48,13 +26,30 @@ void RCOutputFirmata::reset()
 
 boolean RCOutputFirmata::handleSysex(byte command, byte argc, byte *argv)
 {
-  /* required: subcommand, pin, value */
-  if (command != RC_DATA || argc <= 2) {
+  /* required: subcommand, pin */
+  if (command != RCSEND_DATA || argc < 2) {
     return false;
   }
   byte subcommand = argv[0];
   byte pin = argv[1];
   if (Firmata.getPinMode(pin) == IGNORE) {
+    return false;
+  }
+
+  /* handling of setup messages (without value) */
+  if ((subcommand == SETUP_ATTACH) || (subcommand == SETUP_DETACH)) {
+    if (subcommand == SETUP_ATTACH) {
+      attach(pin);
+    }
+    if (subcommand == SETUP_DETACH) {
+      detach(pin);
+    }
+    sendMessage(subcommand, pin);
+    return true;
+  }
+
+  /* required: subcommand, pin, value */
+  if (argc < 3) {
     return false;
   }
   RCSwitch *sender = senders[pin];
@@ -201,10 +196,19 @@ byte RCOutputFirmata::setTristateBit(byte tristateByte, byte index, char tristat
   return (tristateByte & clear) | (tristateBit << shift);
 }
 
+void RCOutputFirmata::sendMessage(byte subcommand, byte pin)
+{
+  Firmata.write(START_SYSEX);
+  Firmata.write(RCSEND_DATA);
+  Firmata.write(subcommand);
+  Firmata.write(pin);
+  Firmata.write(END_SYSEX);
+}
+
 void RCOutputFirmata::sendMessage(byte subcommand, byte pin, byte length, byte *data)
 {
   Firmata.write(START_SYSEX);
-  Firmata.write(RC_DATA);
+  Firmata.write(RCSEND_DATA);
   Firmata.write(subcommand);
   Firmata.write(pin);
   Encoder7Bit.startBinaryWrite();
