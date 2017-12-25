@@ -52,6 +52,7 @@ FRM_RC_Undefine($$)
   my ($hash, $name) = @_;
   Log3($hash, 5, "$name: FRM_RC_Undefine");
   my $pin = $hash->{PIN};
+  FRM_RC_send_message($hash, $hash->{RC_SUBCOMMAND_DETACH}, $pin, ());
   FRM_RC_unregister_observer($hash, $pin);
   FRM_Client_Undef($hash, $name);
 }
@@ -59,25 +60,21 @@ FRM_RC_Undefine($$)
 sub
 FRM_RC_Init($$$$)
 {
-  my ($hash, $pinmode, $observer_method, $args) = @_;
-  my $protocol_version 
-    = FRM_Client_FirmataDevice($hash)->{protocol}->{protocol_version};
-  if (!defined($COMMANDS->{$protocol_version})) {
-    return
-       "Unsupported firmata protocol version $protocol_version."
-     . " Supported versions: " . join(" ", reverse sort keys %{$COMMANDS});
-  }
-  my $name = $hash->{NAME};
+  my ($hash, $command, $subcommand_attach, $subcommand_detach, $observer_method, $pin) = @_;
+  # TODO parameter check
 
+  $hash->{PIN} = $pin;
+  $hash->{RC_COMMAND} = $command;
+  $hash->{RC_SUBCOMMAND_DETACH} = $subcommand_detach;
 
-  # Initialize pin for firmata 
-  my $ret = FRM_Init_Pin_Client($hash, $args, $pinmode);
-  return $ret if (defined $ret);
-
-  my $pin  = $hash->{PIN};
   eval {
+    FRM_Client_AssignIOPort($hash);
+
     # Register observer for messages from the controller  
     FRM_RC_register_observer($hash, $pin, $observer_method);
+
+    # Attach pin
+    FRM_RC_send_message($hash, $subcommand_attach, $pin, ());
   };
   return FRM_Catch($@) if $@;
   readingsSingleUpdate($hash, 'state', 'Initialized', 1);
@@ -112,7 +109,7 @@ sub FRM_RC_Notify {
 }
 
 sub
-FRM_RC_Attr($$$$$)
+FRM_RC_Attr
 {
   my ($command, $name, $attribute, $value, $rcswitchAttributes) = @_;
   my $hash = $defs{$name};
@@ -236,7 +233,7 @@ sub FRM_RC_observe_sysex { # may be called for any sysex message, not only for R
   my $protocol          = $firmata->{protocol};
   my $protocol_version  = $protocol->{protocol_version};
   my $protocol_commands = $COMMANDS->{$protocol_version};
-  if ($command != $protocol_commands->{RESERVED_COMMAND}) {
+  if ($command != $hash->{RC_COMMAND}) {
     return;
   }
   
@@ -267,8 +264,7 @@ sub FRM_RC_get_tristate_byte {
 sub FRM_RC_send_message {
   my ($hash, $subcommand, $pin, @data) = @_;
   my $firmata = FRM_Client_FirmataDevice($hash);
-  my $command
-    = $COMMANDS->{$firmata->{protocol}->{protocol_version}}->{RESERVED_COMMAND};
+  my $command = $hash->{RC_COMMAND};
   Log3($hash, 4, "$hash->{NAME}: Sending $command $subcommand $pin "
                    . join(' ', @data));
   

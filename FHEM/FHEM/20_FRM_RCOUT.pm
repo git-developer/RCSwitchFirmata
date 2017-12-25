@@ -6,7 +6,10 @@ use warnings;
 our ($readingFnAttributes, %attr);
 
 use constant {
-  PINMODE_RCOUTPUT              => 10,
+  RCOUTPUT_DATA                 => 0x7C,
+
+  RCOUTPUT_ATTACH               => 0x01,
+  RCOUTPUT_DETACH               => 0x02,
   
   RCOUTPUT_PROTOCOL             => 0x11,
   RCOUTPUT_PULSE_LENGTH         => 0x12,
@@ -73,7 +76,8 @@ sub
 FRM_RCOUT_Init($$)
 {
   my ($hash, $args) = @_;
-  return FRM_RC_Init($hash, PINMODE_RCOUTPUT, \&FRM_RCOUT_handle_rc_response, $args);
+  return "wrong syntax: define <name> FRM_RCOUT pin" unless defined $args and int(@$args) != 1;
+  return FRM_RC_Init($hash, RCOUTPUT_DATA, RCOUTPUT_ATTACH, RCOUTPUT_DETACH, \&FRM_RCOUT_handle_rc_response, $args);
 }
 
 sub FRM_RCOUT_Notify {
