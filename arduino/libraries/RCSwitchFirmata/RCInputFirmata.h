@@ -1,8 +1,7 @@
 /*
   RCInputFirmata.h - Firmata library
 
-  Version: 1.0.0-SNAPSHOT
-  Date:    2017-12-13
+  Version: 2.0.0-SNAPSHOT
   Author:  git-developer ( https://github.com/git-developer )
 
   Description
@@ -13,10 +12,10 @@
   Usage
   -----
    1.) Connect a RC receiver to an interrupt-enabled pin of your Arduino board
-   2.) Put RCSwitch into your arduino library directory
+   2.) Add RCSwitchFirmata, ConfigurableFirmata and RCSwitch as arduino libraries
    3.) Include RCInputFirmata in RCSwitchFirmata
    4.) Upload RCSwitchFirmata and connect Arduino to host
-   5.) Configure the pin to use pin mode RC_RECEIVE
+   5.) Send attach message to configure the pin as RC receiver
 
    On success, Arduino will report received messages to the host.
   
@@ -37,6 +36,14 @@
 
   Parameters
   ----------
+    SETUP_ATTACH:
+     Description:   Configure a pin as RC receiver
+     Value space:   Arduino pin numbers
+
+    SETUP_DETACH:
+     Description:   Remove a pin as RC receiver
+     Value space:   Arduino pin numbers
+
     CONFIG_TOLERANCE:
      Description:   RCSwitch receive tolerance
      Value space:   Defined by RCSwitch (RCSwitch 2.51: 0-100)
@@ -68,13 +75,14 @@
 #include <FirmataFeature.h>
 #include <RCSwitch.h>
 
-#define RESERVED_COMMAND        0x00             // Sysex command: reserved
-#define RC_DATA                 RESERVED_COMMAND // Sysex command: send or receive RC data
-
-#define RC_RECEIVE              0x0B // pin mode: pin configured for a RC receiver
+#define RCINPUT_DATA            0x7D // Sysex command: receive RC data
 
 /* Subcommands */
 #define UNKNOWN                 0x00
+
+#define SETUP_ATTACH            0x01
+#define SETUP_DETACH            0x02
+
 #define CONFIG_TOLERANCE        0x31
 #define CONFIG_ENABLE_RAW_DATA  0x32
 #define MESSAGE                 0x41
@@ -85,8 +93,6 @@ class RCInputFirmata:public FirmataFeature
 {
 
 public:
-  boolean handlePinMode(byte pin, int mode);
-  void handleCapability(byte pin);
   boolean handleSysex(byte command, byte argc, byte* argv);
   void reset();
   void report();
