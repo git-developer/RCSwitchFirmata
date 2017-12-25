@@ -27,7 +27,7 @@ void RCOutputFirmata::reset()
 boolean RCOutputFirmata::handleSysex(byte command, byte argc, byte *argv)
 {
   /* required: subcommand, pin */
-  if (command != RCSEND_DATA || argc < 2) {
+  if (command != RCOUTPUT_DATA || argc < 2) {
     return false;
   }
   byte subcommand = argv[0];
@@ -199,7 +199,7 @@ byte RCOutputFirmata::setTristateBit(byte tristateByte, byte index, char tristat
 void RCOutputFirmata::sendMessage(byte subcommand, byte pin)
 {
   Firmata.write(START_SYSEX);
-  Firmata.write(RCSEND_DATA);
+  Firmata.write(RCOUTPUT_DATA);
   Firmata.write(subcommand);
   Firmata.write(pin);
   Firmata.write(END_SYSEX);
@@ -208,7 +208,7 @@ void RCOutputFirmata::sendMessage(byte subcommand, byte pin)
 void RCOutputFirmata::sendMessage(byte subcommand, byte pin, byte length, byte *data)
 {
   Firmata.write(START_SYSEX);
-  Firmata.write(RCSEND_DATA);
+  Firmata.write(RCOUTPUT_DATA);
   Firmata.write(subcommand);
   Firmata.write(pin);
   Encoder7Bit.startBinaryWrite();
