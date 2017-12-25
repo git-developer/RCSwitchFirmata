@@ -117,6 +117,8 @@ class RCOutputFirmata:public FirmataFeature
 {
 
 public:
+  boolean handlePinMode(byte pin, int mode);
+  void handleCapability(byte pin);
   
   /**
    * When a command was executed successfully,
@@ -230,6 +232,15 @@ private:
    * @return The given byte with the requested tristate bit set
    */
   byte setTristateBit(byte tristateByte, byte index, char tristateChar);
+
+  /**
+   * Send a message to the firmata host.
+   *
+   * @param subcommand Details about the message
+   *                     (see the constants defined above)
+   * @param pin        Pin that corresponds to the message
+   */
+  void sendMessage(byte subcommand, byte pin);
 
   /**
    * Send a message to the firmata host.

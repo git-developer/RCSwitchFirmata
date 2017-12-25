@@ -93,6 +93,8 @@ class RCInputFirmata:public FirmataFeature
 {
 
 public:
+  boolean handlePinMode(byte pin, int mode);
+  void handleCapability(byte pin);
   boolean handleSysex(byte command, byte argc, byte* argv);
   void reset();
   void report();
@@ -123,6 +125,15 @@ private:
    * @param pin Pin that has a receiver associated
    */
   void detach(byte pin);
+
+  /**
+   * Send a message to the firmata host.
+   *
+   * @param subcommand Details about the message
+   *                     (see the constants defined above)
+   * @param pin        Pin that corresponds to the message
+   */
+  void sendMessage(byte subcommand, byte pin);
 
   /**
    * Send a message composed of two content blocks to the firmata host.

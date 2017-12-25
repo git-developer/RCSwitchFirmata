@@ -15,6 +15,14 @@
 #include "RCInputFirmata.h"
 #include <Encoder7Bit.h>
 
+void RCInputFirmata::handleCapability(byte pin)
+{
+}
+
+boolean RCInputFirmata::handlePinMode(byte pin, int mode) {
+  return false;
+}
+
 void RCInputFirmata::reset()
 {
   for (byte pin = 0; pin < TOTAL_PINS; pin++) {
