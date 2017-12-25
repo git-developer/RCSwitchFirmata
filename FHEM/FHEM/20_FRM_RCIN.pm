@@ -6,7 +6,10 @@ use warnings;
 our ($readingFnAttributes, %attr);
 
 use constant {
-  PINMODE_RCINPUT   => 11,
+  RCINPUT_DATA      => 0x7D,
+
+  RCINPUT_ATTACH    => 0x01,
+  RCINPUT_DETACH    => 0x02,
 
   RCINPUT_TOLERANCE => 0x31,
   RCINPUT_RAW_DATA  => 0x32,
@@ -49,7 +52,7 @@ sub
 FRM_RCIN_Init($$)
 {
   my ($hash, $args) = @_;
-  return FRM_RC_Init($hash, PINMODE_RCINPUT, \&FRM_RCIN_handle_rc_response, $args);
+  return FRM_RC_Init($hash, RCINPUT_DATA, RCINPUT_ATTACH, RCINPUT_DETACH, \&FRM_RCIN_handle_rc_response, $args);
 }
 
 sub FRM_RCIN_Notify {
