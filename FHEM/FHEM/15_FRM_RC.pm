@@ -41,8 +41,9 @@ FRM_RC_Initialize
 
 sub FRM_RC_Define
 {
-  my ( $hash, $def ) = @_;
-  Log3($hash, 5, "$hash->{NAME}: FRM_RC_Define");
+  my ($hash, $def) = @_;
+  my $name = $hash->{NAME};
+  Log3($hash, 5, "$name: FRM_RC_Define");
   $hash->{NOTIFYDEV} = "global";
   FRM_Client_Define($hash, $def);
 }
@@ -62,7 +63,6 @@ sub
 FRM_RC_Init
 {
   my ($hash, $command, $subcommand_attach, $subcommand_detach, $observer_method, $args) = @_;
-  
   my $u = "wrong syntax: define <name> FRM_XXX pin";
   return $u unless defined $args and int(@$args) > 0;
   my $pin = @$args[0];
