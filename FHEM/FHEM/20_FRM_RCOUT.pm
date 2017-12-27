@@ -21,6 +21,14 @@ use constant {
   RCOUTPUT_CODE_PACKED_TRISTATE => 0x28,
 };
 
+use constant RCOUT_SETUP           => {
+  attach => RCOUTPUT_ATTACH,
+  detach => RCOUTPUT_DETACH
+};
+use constant RCOUT_SETUP_NAMES        => {
+  reverse(%{RCOUT_SETUP()}),
+};
+
 use constant RCOUT_GETS             => { 
   raw => '',
 };
@@ -73,10 +81,9 @@ FRM_RCOUT_Initialize($)
 }
 
 sub
-FRM_RCOUT_Init($$)
+FRM_RCOUT_Init
 {
   my ($hash, $args) = @_;
-  return "wrong syntax: define <name> FRM_RCOUT pin" unless defined $args and int(@$args) != 1;
   return FRM_RC_Init($hash, RCOUTPUT_DATA, RCOUTPUT_ATTACH, RCOUTPUT_DETACH, \&FRM_RCOUT_handle_rc_response, $args);
 }
 
@@ -161,6 +168,8 @@ sub FRM_RCOUT_handle_rc_response {
   } elsif ($command eq RCOUTPUT_CODE_CHAR) {
     my $charCode = join('', map { chr($_); } @data);
     @data = ($charCode);
+  } elsif ($command eq RCOUTPUT_ATTACH) {
+  } elsif ($command eq RCOUTPUT_DETACH) {
   } else { # parameter as int
       push @data, (shift @data) + ((shift @data) << 8);
   }
@@ -172,10 +181,21 @@ sub FRM_RCOUT_notify
 {
   my ($hash, $key, $data) = @_;
   my $name = $hash->{NAME};
-  my $subcommand  = RCOUT_SET_NAMES->{$key};
-  my $attrName    = RCOUT_PARAMETER_NAMES->{$key};
+  my $setup_command = RCOUT_SETUP_NAMES->{$key};
+  my $subcommand    = RCOUT_SET_NAMES->{$key};
+  my $attrName      = RCOUT_PARAMETER_NAMES->{$key};
   
   COMMAND_HANDLER: {
+    defined($setup_command) and do {
+      Log3($hash, 4, "$setup_command");
+      my $state;
+      if ('attach' eq $setup_command) {
+        $state = 'Initialized';
+      } elsif ('detach' eq $setup_command) {
+        $state = 'Detached';
+      }
+      readingsSingleUpdate($hash, 'state', $state, 1);
+    };
     defined($subcommand) and do {
       if ('tristateCode' eq $subcommand) {
         my $tristateCode = shift @$data;

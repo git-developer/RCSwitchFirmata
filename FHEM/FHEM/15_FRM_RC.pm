@@ -33,9 +33,10 @@ my %force_apply = ();
 
 
 sub
-FRM_RC_Initialize($)
+FRM_RC_Initialize
 {
   LoadModule('FRM');
+  $main::modules{FRM}{Clients} .= ":FRM_RC.*";
 }
 
 sub FRM_RC_Define
@@ -47,7 +48,7 @@ sub FRM_RC_Define
 }
 
 sub
-FRM_RC_Undefine($$)
+FRM_RC_Undefine
 {
   my ($hash, $name) = @_;
   Log3($hash, 5, "$name: FRM_RC_Undefine");
@@ -58,10 +59,13 @@ FRM_RC_Undefine($$)
 }
 
 sub
-FRM_RC_Init($$$$)
+FRM_RC_Init
 {
-  my ($hash, $command, $subcommand_attach, $subcommand_detach, $observer_method, $pin) = @_;
-  # TODO parameter check
+  my ($hash, $command, $subcommand_attach, $subcommand_detach, $observer_method, $args) = @_;
+  
+  my $u = "wrong syntax: define <name> FRM_XXX pin";
+  return $u unless defined $args and int(@$args) > 0;
+  my $pin = @$args[0];
 
   $hash->{PIN} = $pin;
   $hash->{RC_COMMAND} = $command;
@@ -73,11 +77,10 @@ FRM_RC_Init($$$$)
     # Register observer for messages from the controller  
     FRM_RC_register_observer($hash, $pin, $observer_method);
 
-    # Attach pin
+    # Attach pin; state will be set by FRM_RC???_notify
     FRM_RC_send_message($hash, $subcommand_attach, $pin, ());
   };
   return FRM_Catch($@) if $@;
-  readingsSingleUpdate($hash, 'state', 'Initialized', 1);
   return undef;
 }
 
