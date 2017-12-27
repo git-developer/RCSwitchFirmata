@@ -16,6 +16,14 @@ use constant {
   RCINPUT_MESSAGE   => 0x41,
 };
 
+use constant RCIN_SETUP       => {
+  attach => RCINPUT_ATTACH,
+  detach => RCINPUT_DETACH
+};
+use constant RCIN_SETUP_NAMES => {
+  reverse(%{RCIN_SETUP()})
+};
+
 use constant RCIN_PARAMETERS => {
   tolerance => RCINPUT_TOLERANCE,
   rawData   => RCINPUT_RAW_DATA,
@@ -29,7 +37,7 @@ my %matchListRCIN = (
 );
 
 sub
-FRM_RCIN_Initialize($)
+FRM_RCIN_Initialize
 {
   my ($hash) = @_;
 
@@ -49,7 +57,7 @@ FRM_RCIN_Initialize($)
 }
 
 sub
-FRM_RCIN_Init($$)
+FRM_RCIN_Init
 {
   my ($hash, $args) = @_;
   return FRM_RC_Init($hash, RCINPUT_DATA, RCINPUT_ATTACH, RCINPUT_DETACH, \&FRM_RCIN_handle_rc_response, $args);
@@ -83,7 +91,8 @@ sub FRM_RCIN_handle_rc_response {
       push @rawData, (shift @data) + ((shift @data) << 8);
     }
     @data = ($value, $bitCount, $delay, $protocol, $tristateCode, \@rawData);
-
+  } elsif ($command eq RCINPUT_ATTACH) {
+  } elsif ($command eq RCINPUT_DETACH) {
   } else { # parameter as int
       push @data, (shift @data) + ((shift @data) << 8);
   }
@@ -95,9 +104,20 @@ sub FRM_RCIN_notify
 {
   my ($hash, $key, $value) = @_;
   my $name = $hash->{NAME};
+  my $setup_command = RCIN_SETUP_NAMES->{$key};
   my $attrName = RCIN_PARAMETER_NAMES->{$key};
   
   COMMAND_HANDLER: {
+    defined($setup_command) and do {
+      Log3($hash, 4, "$setup_command");
+      my $state;
+      if ('attach' eq $setup_command) {
+        $state = 'Initialized';
+      } elsif ('detach' eq $setup_command) {
+        $state = 'Detached';
+      }
+      readingsSingleUpdate($hash, 'state', $state, 1);
+    };
     ($key eq RCINPUT_MESSAGE) and do {
 
       my ($longCode, $bitCount, $delay, $protocol, $tristateCode, $rawData) = @$value;
