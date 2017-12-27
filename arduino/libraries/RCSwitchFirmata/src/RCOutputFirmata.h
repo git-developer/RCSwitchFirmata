@@ -90,7 +90,7 @@
 #include <FirmataFeature.h>
 #include <RCSwitch.h>
 
-#define RCOUTPUT_DATA           0x7C // Sysex command: send RC data
+#define RCOUTPUT_DATA           0x5C // Sysex command: send RC data
 
 /* Subcommands */
 #define UNKNOWN                 0x00

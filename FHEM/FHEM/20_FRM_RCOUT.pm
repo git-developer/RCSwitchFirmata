@@ -6,7 +6,7 @@ use warnings;
 our ($readingFnAttributes, %attr);
 
 use constant {
-  RCOUTPUT_DATA                 => 0x7C,
+  RCOUTPUT_DATA                 => 0x5C,
 
   RCOUTPUT_ATTACH               => 0x01,
   RCOUTPUT_DETACH               => 0x02,

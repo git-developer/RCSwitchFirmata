@@ -75,7 +75,7 @@
 #include <FirmataFeature.h>
 #include <RCSwitch.h>
 
-#define RCINPUT_DATA            0x7D // Sysex command: receive RC data
+#define RCINPUT_DATA            0x5D // Sysex command: receive RC data
 
 /* Subcommands */
 #define UNKNOWN                 0x00
