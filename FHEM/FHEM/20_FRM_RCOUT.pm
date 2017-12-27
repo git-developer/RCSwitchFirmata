@@ -187,7 +187,7 @@ sub FRM_RCOUT_notify
   
   COMMAND_HANDLER: {
     defined($setup_command) and do {
-      Log3($hash, 4, "$setup_command");
+      Log3($hash, 4, "$name: Received setup command '$setup_command'");
       my $state;
       if ('attach' eq $setup_command) {
         $state = 'Initialized';
