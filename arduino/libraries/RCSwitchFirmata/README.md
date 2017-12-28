@@ -43,7 +43,7 @@ A common pattern of all queries is that they echo the query message as response.
 | `RCOUTPUT_CODE_CHAR`            | Send a character code                        | `char[]`                                   |                                           |
 | `RCOUTPUT_CODE_TRISTATE_PACKED` | Send a tristate code                         | `byte[]`; every byte is composed of 4 tristate bits (defined as `RCOUTPUT_TRISTATE_?` constants in this file) | |                                           |
 
-#### Query messages
+#### Report messages
 - none
 
 ### Receive (RCInputFirmata)
@@ -55,7 +55,7 @@ A common pattern of all queries is that they echo the query message as response.
 | `RCINPUT_TOLERANCE`             | RCSwitch value `receive tolerance`           | Defined by RCSwitch (RCSwitch 2.51: 0-100) | Defined by RCSwitch (RCSwitch 2.51: 60)   |
 | `RCINPUT_ENABLE_RAW_DATA`       | Enable reporting of raw data                 | `boolean`                                  | `false`                                   |
 
-#### Query messages
+#### Report messages
 - bytes  0-3: received value (`long`)
 - bytes  4-5: bitCount (`int`)
 - bytes  6-7: delay (`int`)
