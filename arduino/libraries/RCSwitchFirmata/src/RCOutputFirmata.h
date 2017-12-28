@@ -1,87 +1,7 @@
 /*
   RCOutputFirmata.h - Firmata library
 
-  Version: 2.0.0-SNAPSHOT
-  Author:  git-developer ( https://github.com/git-developer )
-   
-  Description
-  -----------
-   This library is an adapter between the firmata protocol and the RCSwitch
-   library. It allows to send radio control (RC) messages.
-
-  Usage
-  -----
-   1.) Connect a RC receiver to a digital pin of your Arduino board
-   2.) Add RCSwitchFirmata, ConfigurableFirmata and RCSwitch as arduino libraries
-   3.) Include RCOutputFirmata in RCSwitchFirmata
-   4.) Upload RCSwitchFirmata and connect Arduino to host
-   5.) Send attach message to configure the pin as RC sender
-
-   On success, you may send radio messages from the host. Every message that is
-   sent from the host will be echoed back as acknowledgement.
-  
-  Message format
-  --------------
-    byte 0:    subcommand
-    byte 1:    pin
-    bytes 2-n: subcommand specific parameters
-
-  Parameters
-  ----------
-    RCOUTPUT_ATTACH:
-     Description:   Configure a pin as RC sender
-     Value space:   Arduino pin numbers
-
-    RCOUTPUT_DETACH:
-     Description:   Remove a pin as RC sender
-     Value space:   Arduino pin numbers
-
-    RCOUTPUT_PROTOCOL:
-     Description:   Set the RCSwitch parameter "protocol"
-     Value space:   Defined by RCSwitch (RCSwitch 2.51: 1-3)
-     Default value: Defined by RCSwitch (RCSwitch 2.51: 1)
-
-    RCOUTPUT_PULSE_LENGTH:
-     Description:   Set the RCSwitch parameter "pulse length"
-     Value space:   Defined by RCSwitch (RCSwitch 2.51: int)
-     Default value: Defined by RCSwitch (RCSwitch 2.51: 350)
-
-    RCOUTPUT_REPEAT_TRANSMIT:
-     Description:   Set the RCSwitch parameter "repeat transmit"
-     Value space:   Defined by RCSwitch (RCSwitch 2.51: int)
-     Default value: Defined by RCSwitch (RCSwitch 2.51: 10)
-
-    RCOUTPUT_CODE_TRISTATE:
-     Description:   Send a tristate code
-     Value space:   char[]
-
-    RCOUTPUT_CODE_LONG:
-     Description:   Send a long code
-     Value space:   long
-
-    RCOUTPUT_CODE_CHAR:
-     Description:   Send a character code
-     Value space:   char[]
-
-    RCOUTPUT_CODE_TRISTATE_PACKED:
-     Description:   Send a tristate code
-     Value space:   byte[] - every byte is composed of 4 tristate bits
-                    (defined as RCOUTPUT_TRISTATE_? constants in this file)
-
-  Downloads
-  ---------
-   RCSwitchFirmata:     https://github.com/git-developer/RCSwitchFirmata
-   ConfigurableFirmata: https://github.com/firmata/ConfigurableFirmata
-   RCSwitch:            https://github.com/sui77/rc-switch
-
-  License
-  -------
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-
-   See file LICENSE.txt for further informations on licensing terms.
+  See file 'README.md' for documentation.
 */
 
 #ifndef RCOutputFirmata_h
@@ -90,7 +10,8 @@
 #include <FirmataFeature.h>
 #include <RCSwitch.h>
 
-#define RCOUTPUT_DATA             0x5C // Sysex command: send RC data
+/* Sysex command: send RC data */
+#define RCOUTPUT_DATA                 0x5C
 
 /* Subcommands */
 #define RCOUTPUT_UNKNOWN              0x00

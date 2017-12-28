@@ -1,73 +1,7 @@
 /*
   RCInputFirmata.h - Firmata library
 
-  Version: 2.0.0-SNAPSHOT
-  Author:  git-developer ( https://github.com/git-developer )
-
-  Description
-  -----------
-   This library is an adapter between the firmata protocol and the RCSwitch
-   library. It allows to receive radio control (RC) messages.
-
-  Usage
-  -----
-   1.) Connect a RC receiver to an interrupt-enabled pin of your Arduino board
-   2.) Add RCSwitchFirmata, ConfigurableFirmata and RCSwitch as arduino libraries
-   3.) Include RCInputFirmata in RCSwitchFirmata
-   4.) Connect Arduino to host and upload RCSwitchFirmata
-   5.) Send attach message to configure the pin as RC receiver
-
-   On success, Arduino will report received messages to the host.
-  
-  Message format
-  --------------
-    Configuration messages:
-     byte 0: subcommand
-     byte 1: pin
-     byte 2: subcommand specific parameter
-
-    Reported messages (8-bit, after unpacking):
-     bytes  0-3: received value (long)
-     bytes  4-5: bitCount (int)
-     bytes  6-7: delay (int)
-     bytes  8-9: protocol (int)
-    if rawdata is enabled:
-     bytes 10-(2*RCSWITCH_MAX_CHANGES): raw data (int[])
-
-  Parameters
-  ----------
-    RCINPUT_ATTACH:
-     Description:   Configure a pin as RC receiver
-     Value space:   Arduino pin numbers
-
-    RCINPUT_DETACH:
-     Description:   Remove a pin as RC receiver
-     Value space:   Arduino pin numbers
-
-    RCINPUT_TOLERANCE:
-     Description:   RCSwitch receive tolerance
-     Value space:   Defined by RCSwitch (RCSwitch 2.51: 0-100)
-     Default value: Defined by RCSwitch (RCSwitch 2.51: 60)
-
-    RCINPUT_ENABLE_RAW_DATA:
-     Description:   Enable reporting of raw data
-     Value space:   boolean
-     Default value: false
-
-  Downloads
-  ---------
-   RCSwitchFirmata:     https://github.com/git-developer/RCSwitchFirmata
-   ConfigurableFirmata: https://github.com/firmata/ConfigurableFirmata
-   RCSwitch:            https://github.com/sui77/rc-switch
-
-  License
-  -------
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-
-   See file LICENSE.txt for further informations on licensing terms.
+  See file 'README.md' for documentation.
 */
 
 #ifndef RCInputFirmata_h
@@ -76,7 +10,8 @@
 #include <FirmataFeature.h>
 #include <RCSwitch.h>
 
-#define RCINPUT_DATA            0x5D // Sysex command: receive RC data
+/* Sysex command: receive RC data */
+#define RCINPUT_DATA            0x5D
 
 /* Subcommands */
 #define RCINPUT_UNKNOWN         0x00

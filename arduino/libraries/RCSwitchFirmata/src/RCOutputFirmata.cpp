@@ -1,15 +1,7 @@
 /*
   RCOutputFirmata.cpp - Firmata library
 
-  Version: 2.0.0-SNAPSHOT
-  Author:  git-developer ( https://github.com/git-developer )
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
-
-  See file LICENSE.txt for further informations on licensing terms.
+  See file 'README.md' for documentation.
 */
 
 #include "RCOutputFirmata.h"
