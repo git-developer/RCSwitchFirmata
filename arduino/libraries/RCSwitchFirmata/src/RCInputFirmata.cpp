@@ -41,17 +41,17 @@ boolean RCInputFirmata::handleSysex(byte command, byte argc, byte *argv)
   }
   byte subcommand = argv[0];
   byte pin = argv[1];
-  if (Firmata.getPinMode(pin) == IGNORE) {
+  if (Firmata.getPinMode(pin) == PIN_MODE_IGNORE) {
     return false;
   }
 
   /* handling of setup messages (without value) */
-  if ((subcommand == SETUP_ATTACH) || (subcommand == SETUP_DETACH)) {
+  if ((subcommand == RCINPUT_ATTACH) || (subcommand == RCINPUT_DETACH)) {
     boolean success = true;
-    if (subcommand == SETUP_ATTACH) {
+    if (subcommand == RCINPUT_ATTACH) {
       success = attach(pin);
     }
-    if (subcommand == SETUP_DETACH) {
+    if (subcommand == RCINPUT_DETACH) {
       detach(pin);
     }
     sendMessage(subcommand, pin);
@@ -81,12 +81,12 @@ boolean RCInputFirmata::handleSysex(byte command, byte argc, byte *argv)
   int value = *(int*) data;
 
   switch (subcommand) {
-   case CONFIG_TOLERANCE:       { receiver->setReceiveTolerance(value); break; }
-   case CONFIG_ENABLE_RAW_DATA: { rawdataEnabled = (boolean) data[0]; break; }
-   default:                     { subcommand = UNKNOWN; }
+   case RCINPUT_TOLERANCE:       { receiver->setReceiveTolerance(value); break; }
+   case RCINPUT_ENABLE_RAW_DATA: { rawdataEnabled = (boolean) data[0]; break; }
+   default:                      { subcommand = RCINPUT_UNKNOWN; }
   }
   sendMessage(subcommand, pin, length, data, 0, data);
-  return subcommand != UNKNOWN;
+  return subcommand != RCINPUT_UNKNOWN;
 }
 
 void RCInputFirmata::report()
@@ -125,7 +125,7 @@ void RCInputFirmata::report()
         
         byte rawdataLength = rawdataEnabled ? 2*RCSWITCH_MAX_CHANGES : 0;
         
-        sendMessage(MESSAGE, pin, 10, data, rawdataLength, (byte*) rawdata);
+        sendMessage(RCINPUT_MESSAGE, pin, 10, data, rawdataLength, (byte*) rawdata);
       }
     }
   }
@@ -134,7 +134,7 @@ void RCInputFirmata::report()
 boolean RCInputFirmata::attach(byte pin)
 {
   int interrupt = getInterrupt(pin);
-  if (interrupt == NO_INTERRUPT) {
+  if (interrupt == RCINPUT_NO_INTERRUPT) {
     return false;
   }
   pinMode(PIN_TO_DIGITAL(pin), INPUT);
@@ -190,7 +190,7 @@ byte RCInputFirmata::getInterrupt(byte pin) {
 // this method fits common Arduino board including Mega.
 // TODO check how this can be made more flexible to fit different boards
 
-  byte interrupt = NO_INTERRUPT;
+  byte interrupt = RCINPUT_NO_INTERRUPT;
   switch (pin) {
     case   2: interrupt = 0; break;
     case   3: interrupt = 1; break;

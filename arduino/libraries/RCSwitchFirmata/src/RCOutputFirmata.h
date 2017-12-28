@@ -7,7 +7,7 @@
   Description
   -----------
    This library is an adapter between the firmata protocol and the RCSwitch
-   library. It allows to send radio messages.
+   library. It allows to send radio control (RC) messages.
 
   Usage
   -----
@@ -28,45 +28,45 @@
 
   Parameters
   ----------
-    SETUP_ATTACH:
+    RCOUTPUT_ATTACH:
      Description:   Configure a pin as RC sender
      Value space:   Arduino pin numbers
 
-    SETUP_DETACH:
+    RCOUTPUT_DETACH:
      Description:   Remove a pin as RC sender
      Value space:   Arduino pin numbers
 
-    CONFIG_PROTOCOL:
+    RCOUTPUT_PROTOCOL:
      Description:   Set the RCSwitch parameter "protocol"
      Value space:   Defined by RCSwitch (RCSwitch 2.51: 1-3)
      Default value: Defined by RCSwitch (RCSwitch 2.51: 1)
 
-    CONFIG_PULSE_LENGTH:
+    RCOUTPUT_PULSE_LENGTH:
      Description:   Set the RCSwitch parameter "pulse length"
      Value space:   Defined by RCSwitch (RCSwitch 2.51: int)
      Default value: Defined by RCSwitch (RCSwitch 2.51: 350)
 
-    CONFIG_REPEAT_TRANSMIT:
+    RCOUTPUT_REPEAT_TRANSMIT:
      Description:   Set the RCSwitch parameter "repeat transmit"
      Value space:   Defined by RCSwitch (RCSwitch 2.51: int)
      Default value: Defined by RCSwitch (RCSwitch 2.51: 10)
 
-    CODE_TRISTATE:
+    RCOUTPUT_CODE_TRISTATE:
      Description:   Send a tristate code
      Value space:   char[]
 
-    CODE_LONG:
+    RCOUTPUT_CODE_LONG:
      Description:   Send a long code
      Value space:   long
 
-    CODE_CHAR:
+    RCOUTPUT_CODE_CHAR:
      Description:   Send a character code
      Value space:   char[]
 
-    CODE_TRISTATE_PACKED:
+    RCOUTPUT_CODE_TRISTATE_PACKED:
      Description:   Send a tristate code
      Value space:   byte[] - every byte is composed of 4 tristate bits
-                    (defined as TRISTATE_? constants in this file)
+                    (defined as RCOUTPUT_TRISTATE_? constants in this file)
 
   Downloads
   ---------
@@ -90,28 +90,25 @@
 #include <FirmataFeature.h>
 #include <RCSwitch.h>
 
-#define RCOUTPUT_DATA           0x5C // Sysex command: send RC data
+#define RCOUTPUT_DATA             0x5C // Sysex command: send RC data
 
 /* Subcommands */
-#define UNKNOWN                 0x00
-
-#define SETUP_ATTACH            0x01
-#define SETUP_DETACH            0x02
-
-#define CONFIG_PROTOCOL         0x11
-#define CONFIG_PULSE_LENGTH     0x12
-#define CONFIG_REPEAT_TRANSMIT  0x14
-
-#define CODE_TRISTATE           0x21
-#define CODE_LONG               0x22
-#define CODE_CHAR               0x24
-#define CODE_TRISTATE_PACKED    0x28
+#define RCOUTPUT_UNKNOWN              0x00
+#define RCOUTPUT_ATTACH               0x01
+#define RCOUTPUT_DETACH               0x02
+#define RCOUTPUT_PROTOCOL             0x11
+#define RCOUTPUT_PULSE_LENGTH         0x12
+#define RCOUTPUT_REPEAT_TRANSMIT      0x14
+#define RCOUTPUT_CODE_TRISTATE        0x21
+#define RCOUTPUT_CODE_LONG            0x22
+#define RCOUTPUT_CODE_CHAR            0x24
+#define RCOUTPUT_CODE_TRISTATE_PACKED 0x28
 
 /* Tristate bit values */
-#define TRISTATE_0              0x00
-#define TRISTATE_F              0x01
-#define TRISTATE_RESERVED       0x02
-#define TRISTATE_1              0x03
+#define RCOUTPUT_TRISTATE_0           0x00
+#define RCOUTPUT_TRISTATE_F           0x01
+#define RCOUTPUT_TRISTATE_RESERVED    0x02
+#define RCOUTPUT_TRISTATE_1           0x03
 
 class RCOutputFirmata:public FirmataFeature
 {

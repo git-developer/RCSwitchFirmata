@@ -7,14 +7,14 @@
   Description
   -----------
    This library is an adapter between the firmata protocol and the RCSwitch
-   library. It allows to receive radio messages.
+   library. It allows to receive radio control (RC) messages.
 
   Usage
   -----
    1.) Connect a RC receiver to an interrupt-enabled pin of your Arduino board
    2.) Add RCSwitchFirmata, ConfigurableFirmata and RCSwitch as arduino libraries
    3.) Include RCInputFirmata in RCSwitchFirmata
-   4.) Upload RCSwitchFirmata and connect Arduino to host
+   4.) Connect Arduino to host and upload RCSwitchFirmata
    5.) Send attach message to configure the pin as RC receiver
 
    On success, Arduino will report received messages to the host.
@@ -26,7 +26,7 @@
      byte 1: pin
      byte 2: subcommand specific parameter
 
-    Reported messages:
+    Reported messages (8-bit, after unpacking):
      bytes  0-3: received value (long)
      bytes  4-5: bitCount (int)
      bytes  6-7: delay (int)
@@ -36,28 +36,29 @@
 
   Parameters
   ----------
-    SETUP_ATTACH:
+    RCINPUT_ATTACH:
      Description:   Configure a pin as RC receiver
      Value space:   Arduino pin numbers
 
-    SETUP_DETACH:
+    RCINPUT_DETACH:
      Description:   Remove a pin as RC receiver
      Value space:   Arduino pin numbers
 
-    CONFIG_TOLERANCE:
+    RCINPUT_TOLERANCE:
      Description:   RCSwitch receive tolerance
      Value space:   Defined by RCSwitch (RCSwitch 2.51: 0-100)
      Default value: Defined by RCSwitch (RCSwitch 2.51: 60)
 
-    CONFIG_ENABLE_RAW_DATA:
+    RCINPUT_ENABLE_RAW_DATA:
      Description:   Enable reporting of raw data
      Value space:   boolean
      Default value: false
 
   Downloads
   ---------
-   ConfigurableFirmata: https://github.com/firmata/arduino/tree/configurable
-   RCSwitch:            https://code.google.com/p/rc-switch/
+   RCSwitchFirmata:     https://github.com/git-developer/RCSwitchFirmata
+   ConfigurableFirmata: https://github.com/firmata/ConfigurableFirmata
+   RCSwitch:            https://github.com/sui77/rc-switch
 
   License
   -------
@@ -78,16 +79,14 @@
 #define RCINPUT_DATA            0x5D // Sysex command: receive RC data
 
 /* Subcommands */
-#define UNKNOWN                 0x00
+#define RCINPUT_UNKNOWN         0x00
+#define RCINPUT_ATTACH          0x01
+#define RCINPUT_DETACH          0x02
+#define RCINPUT_TOLERANCE       0x31
+#define RCINPUT_ENABLE_RAW_DATA 0x32
+#define RCINPUT_MESSAGE         0x41
 
-#define SETUP_ATTACH            0x01
-#define SETUP_DETACH            0x02
-
-#define CONFIG_TOLERANCE        0x31
-#define CONFIG_ENABLE_RAW_DATA  0x32
-#define MESSAGE                 0x41
-
-#define NO_INTERRUPT -1
+#define RCINPUT_NO_INTERRUPT -1
 
 class RCInputFirmata:public FirmataFeature
 {
@@ -158,7 +157,7 @@ private:
    * @param pin A pin
    *
    * @return the interrupt number for the given pin,
-   *         or NO_INTERRUPT if the pin cannot be used for external interrupts
+   *         or RCINPUT_NO_INTERRUPT if the pin cannot be used for external interrupts
    */
   byte getInterrupt(byte pin);
 

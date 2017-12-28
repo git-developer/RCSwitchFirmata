@@ -40,16 +40,16 @@ boolean RCOutputFirmata::handleSysex(byte command, byte argc, byte *argv)
   }
   byte subcommand = argv[0];
   byte pin = argv[1];
-  if (Firmata.getPinMode(pin) == IGNORE) {
+  if (Firmata.getPinMode(pin) == PIN_MODE_IGNORE) {
     return false;
   }
 
   /* handling of setup messages (without value) */
-  if ((subcommand == SETUP_ATTACH) || (subcommand == SETUP_DETACH)) {
-    if (subcommand == SETUP_ATTACH) {
+  if ((subcommand == RCOUTPUT_ATTACH) || (subcommand == RCOUTPUT_DETACH)) {
+    if (subcommand == RCOUTPUT_ATTACH) {
       attach(pin);
     }
-    if (subcommand == SETUP_DETACH) {
+    if (subcommand == RCOUTPUT_DETACH) {
       detach(pin);
     }
     sendMessage(subcommand, pin);
@@ -79,17 +79,17 @@ boolean RCOutputFirmata::handleSysex(byte command, byte argc, byte *argv)
   int value = *(int*) data;
 
   switch (subcommand) {
-    case CONFIG_PROTOCOL:        { sender->setProtocol(value); break; }
-    case CONFIG_PULSE_LENGTH:    { sender->setPulseLength(value); break; }
-    case CONFIG_REPEAT_TRANSMIT: { sender->setRepeatTransmit(value); break; }
-    case CODE_TRISTATE:          { length = sendTristate(sender, data); break; }
-    case CODE_LONG:              { length = sendLong(sender, data); break; }
-    case CODE_CHAR:              { length = sendString(sender, data); break; }
-    case CODE_TRISTATE_PACKED:   { length = sendPackedTristate(sender, data, length); break; } 
-    default:                     { subcommand = UNKNOWN; }
+    case RCOUTPUT_PROTOCOL:             { sender->setProtocol(value); break; }
+    case RCOUTPUT_PULSE_LENGTH:         { sender->setPulseLength(value); break; }
+    case RCOUTPUT_REPEAT_TRANSMIT:      { sender->setRepeatTransmit(value); break; }
+    case RCOUTPUT_CODE_TRISTATE:        { length = sendTristate(sender, data); break; }
+    case RCOUTPUT_CODE_LONG:            { length = sendLong(sender, data); break; }
+    case RCOUTPUT_CODE_CHAR:            { length = sendString(sender, data); break; }
+    case RCOUTPUT_CODE_TRISTATE_PACKED: { length = sendPackedTristate(sender, data, length); break; }
+    default:                            { subcommand = RCOUTPUT_UNKNOWN; }
   }
   sendMessage(subcommand, pin, length, data);
-  return subcommand != UNKNOWN;
+  return subcommand != RCOUTPUT_UNKNOWN;
 }
 
 void RCOutputFirmata::attach(byte pin)
@@ -108,7 +108,7 @@ void RCOutputFirmata::detach(byte pin)
   if (sender) {
     sender->disableTransmit();
     free(sender);
-    senders[pin]=NULL;
+    senders[pin] = NULL;
   }
 }
 
@@ -166,7 +166,7 @@ byte RCOutputFirmata::pack(char* tristateCode, byte length, byte *tristateBytes)
   for (; (count & 0x03) != 0; count++) {
     tristateBytes[count/4] = setTristateBit(tristateBytes[count/4],
                                             count & 0x03,
-                                            TRISTATE_RESERVED);
+                                            RCOUTPUT_TRISTATE_RESERVED);
   }
   return count/4;
 }
@@ -182,9 +182,9 @@ char RCOutputFirmata::getTristateChar(byte tristateByte, byte index)
   byte shift = 2*(index & 0x03); // 0, 2, 4 or 6
   byte tristateBit = ((tristateByte << shift) >> 6) & 0x3;
   switch (tristateBit) {
-    case TRISTATE_0: c = '0'; break;
-    case TRISTATE_F: c = 'F'; break;
-    case TRISTATE_1: c = '1'; break;
+    case RCOUTPUT_TRISTATE_0: c = '0'; break;
+    case RCOUTPUT_TRISTATE_F: c = 'F'; break;
+    case RCOUTPUT_TRISTATE_1: c = '1'; break;
   }
   return c;
 }
@@ -193,11 +193,11 @@ byte RCOutputFirmata::setTristateBit(byte tristateByte, byte index, char tristat
 {
   byte shift = 6-(2*index); // 6, 4, 2 or 0
   byte clear = ~(0x03 << shift); // bitmask to clear the requested 2 bits
-  byte tristateBit = TRISTATE_RESERVED;
+  byte tristateBit = RCOUTPUT_TRISTATE_RESERVED;
   switch (tristateChar) {
-    case '0': tristateBit = TRISTATE_0; break;
-    case 'F': tristateBit = TRISTATE_F; break;
-    case '1': tristateBit = TRISTATE_1; break;
+    case '0': tristateBit = RCOUTPUT_TRISTATE_0; break;
+    case 'F': tristateBit = RCOUTPUT_TRISTATE_F; break;
+    case '1': tristateBit = RCOUTPUT_TRISTATE_1; break;
   }
   
   /* remove old data from the requested position and set the tristate bit */
