@@ -140,7 +140,7 @@ FRM_RCOUT_Set($@)
     } elsif ($command eq RCOUTPUT_CODE_CHAR) {
         @code = map {ord($_)} split('', $a[2]);
     }
-     FRM_RCOUT_send_code($hash, $command, $hash->{PIN}, @code);
+    FRM_RCOUT_send_code($hash, $command, $hash->{PIN}, @code);
   };
   return $@;
 }
@@ -263,7 +263,7 @@ sub FRM_RCOUT_send_code {
     die "Unsupported subcommand $subcommand";
   }
   
-  return FRM_RC_send_message($hash,  $subcommand, $pin, @transferCode);
+  return FRM_RC_send_message($hash, $subcommand, $pin, @transferCode);
 }
 
 # extract tristate bit from byte (containing 4 tristate bits)
