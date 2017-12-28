@@ -30,24 +30,24 @@ RCSwitchFirmata allows you to use a single Arduino for multiple purposes, includ
 3. Connect the Arduino to the host.
 
 ## Arduino configuration
-* Details: [arduino/libraries/RCSwitchFirmata/README.md](https://github.com/git-developer/RCSwitchFirmata/tree/dev-2.0.0/arduino/libraries/RCSwitchFirmata/README.md)
+* Details: [arduino/libraries/RCSwitchFirmata/README.md](arduino/libraries/RCSwitchFirmata/README.md)
 ### Requirements
 * Arduino IDE
 * RCSwitchFirmata library (directory `arduino/libraries/RCSwitchFirmata` within this repository)
 
 ### Setup
 1. Add RCSwitchFirmata, ConfigurableFirmata and RCSwitch as arduino libraries, either with the Arduino IDE menu item *Add library...* or by copying them into your Arduino library folder.
- * On Windows and Mac, this is the Documents folder in your user home directory, e.g. `My Documents/Arduino/libraries`
- * On Linux, this is `Sketchbook/libraries` in your user home directory.
+   * On Windows and Mac, this is the Documents folder in your user home directory, e.g. `My Documents/Arduino/libraries`
+   * On Linux, this is `Sketchbook/libraries` in your user home directory.
 1. Copy the example sketch directory `examples/RCSwitchFirmata` to you Arduino sketch folder or a working directory.
 1. Open the `RCSwitchFirmata.ino` sketch in the Arduino IDE and configure it according to your needs.
 1. Connect your hardware to the pins of your Arduino board
-  1. If you want to send RF signals: connect a RC sender to an arbitrary pin
-  1. If you want to receive RF signals: connect a RC receiver to an interrupt-enabled pin
+    1. If you want to send RF signals: connect a RC sender to an arbitrary pin
+    1. If you want to receive RF signals: connect a RC receiver to an interrupt-enabled pin
 1. Connect your Arduino board to the host; save, compile and upload your `RCSwitchFirmata.ino` sketch
 1. Connect your Firmata client software to the Arduino
-  1. If you want to send RF signals: send an `RCOUTPUT_ATTACH` message to sender pin
-  1. If you want to receive RF signals: send an `RCINPUT_ATTACH` message to receiver pin
+    1. If you want to send RF signals: send an `RCOUTPUT_ATTACH` message to sender pin
+    1. If you want to receive RF signals: send an `RCINPUT_ATTACH` message to receiver pin
 
 Firmata features can be en-/disabled by in-/excluding the corresponding header in the `RCSwitchFirmata.ino` sketch. By default, all features are enabled. Microcontrollers with limited memory (< 16k) are not able to support all features simultaneously. To overcome this limitation, comment out the feature class declaration and associated include for any features that you do not need.
 
@@ -84,13 +84,15 @@ You may disable any Firmata feature to save memory. For example, if you don't ne
 ```
 
 ## FHEM configuration
-* Details: [FHEM/README.md](https://github.com/git-developer/RCSwitchFirmata/tree/dev-2.0.0/FHEM/README.md)
+* Details: [FHEM/README.md](FHEM/README.md)
 ### Requirements
 1. A working FHEM installation in version 5.5 or higher
 
 ### Setup
-1. Add the RCSwitchFirmata repository to your FHEM installation so that it will be included by the FHEM `update` command. To achieve this, enter the following command on the FHEM commandline once: `update add https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev-2.0.0/FHEM/controls_frm_rc.txt`
-1. Update RCSwitchFirmata manually: `update https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev-2.0.0/FHEM/controls_frm_rc.txt`
+1. Add the RCSwitchFirmata repository to your FHEM installation so that it will be included by the FHEM `update` command. To achieve this, enter the following command on the FHEM commandline once:
+`update add https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev-2.0.0/FHEM/controls_frm_rc.txt`
+1. Update RCSwitchFirmata manually:
+`update https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev-2.0.0/FHEM/controls_frm_rc.txt`
 1. Add a device for Firmata
 1. To send, add a device for the sender
 1. To receive, add a device for the receiver
@@ -129,7 +131,7 @@ The signal quality depends on the quality of the RF modules and the antenna.
 RCSwitchFirmata was developed on and works with [Arduino IDE 1.8.4](https://www.arduino.cc/en/Main/OldSoftwareReleases). In earlier versions of the IDE, the include mechanism is different causing compile errors.
 
 ## Project status
-This project was developed on the FHEM forum in 2014, moved to GitHub in 2015 and was updated to ConfigurableFirmata 2.10 in 2018.
+This project was developed on the FHEM forum in 2014, moved to GitHub in 2015 and was updated to ConfigurableFirmata 2.10 in 2017.
 
 ## History
 See the thread [FHEM+Arduino Firmata via Ethernet+RF 433 Mhz Sender+Baumarkt-Funksteckdosen](http://forum.fhem.de/index.php/topic,22320.0.html) for details about the development of this project.
