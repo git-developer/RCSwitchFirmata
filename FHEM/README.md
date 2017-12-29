@@ -1,6 +1,6 @@
 # FHEM repository for RCSwitchFirmata
 
-This repository contains the FHEM modules for RCSwitch. It may be added to FHEM by entering the following command in FHEM once:
+This repository contains the FHEM modules for RCSwitchFirmata. It may be added to FHEM by entering the following command in FHEM once:
 ```
 update add https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/development/FHEM/controls_frm_rc.txt
 ```

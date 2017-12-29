@@ -17,7 +17,7 @@ When FHEM is used, you have to update the Firmata client manually, because the b
 ### Compatibility
 The following constellations have been tested:
 
-| Arduino IDE | ConfigurableFirmata                                                                         | RCSwitch                                                          | perl-firmata                                   | FHEM Firmata modules                                                  | Compile | Send         | Receive | Notes            | 
+| Arduino IDE | ConfigurableFirmata                                                                         | rc-switch                                                         | perl-firmata                                   | FHEM Firmata modules                                                  | Compile | Send         | Receive | Notes            | 
 | ----------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------- | ------- | ------------ | ------- | ---------------  | 
 | 1.8.4       | [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)                | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | [0.63](https://github.com/jnsbyr/perl-firmata) | [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) | OK      | OK           | OK      | Recommended      | 
 | 1.8.4       | [2.9.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.9.0)                  | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | [0.63](https://github.com/jnsbyr/perl-firmata) | [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) | OK      | OK           | OK      |                  | 
@@ -28,7 +28,7 @@ The following constellations have been tested:
 It may be possible that workarounds for the listed problems do exist. It may also be possible that other constellations work. Comments and experiences are welcome.
 
 ## Description
-[RCSwitchFirmata](https://github.com/git-developer/RCSwitchFirmata) is an adapter between [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) and the [RCSwitch](https://github.com/sui77/rc-switch) library. It comes with an integration into [FHEM](http://fhem.de).
+[RCSwitchFirmata](https://github.com/git-developer/RCSwitchFirmata) is an adapter between [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) and the [rc-switch](https://github.com/sui77/rc-switch) library. It comes with an integration into [FHEM](http://fhem.de).
 
 RCSwitchFirmata allows you to use a single Arduino for multiple purposes, including radio transmissions. For example, you can read digital inputs, control a relais and switch radio outlets with a single Arduino today. You could extend that to receive the temperature from your weather station tomorrow, without a change to the Arduino sketch.
 
@@ -56,7 +56,7 @@ RCSwitchFirmata allows you to use a single Arduino for multiple purposes, includ
 * RCSwitchFirmata library (directory `arduino/libraries/RCSwitchFirmata` within this repository)
 
 ### Setup
-1. Add RCSwitchFirmata, ConfigurableFirmata and RCSwitch as arduino libraries, either with the Arduino IDE menu item *Add library...* or by copying them into your Arduino library folder.
+1. Add RCSwitchFirmata, ConfigurableFirmata and rc-switch as arduino libraries, either with the Arduino IDE menu item *Add library...* or by copying them into your Arduino library folder.
    * On Windows and Mac, this is the Documents folder in your user home directory, e.g. `My Documents/Arduino/libraries`
    * On Linux, this is `Sketchbook/libraries` in your user home directory.
 1. Copy the example sketch directory `examples/RCSwitchFirmata` to you Arduino sketch folder or a working directory.
@@ -125,7 +125,7 @@ Now let's say you want to switch an Intertechno socket outlet.
 * RF sender module is connected to pin 11,
 * RF receiver module is connected to pin 2
 
-#### RCSwitch Configuration
+#### RCSwitchFirmata Configuration
 
 ```
 define firmata FRM /dev/ttyUSB0@57600
