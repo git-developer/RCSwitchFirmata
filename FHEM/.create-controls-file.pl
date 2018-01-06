@@ -9,6 +9,9 @@ sub cancel {
 if (@ARGV == 0) {
   cancel "Please provide a list of files as arguments.";
 }
+
+binmode(STDOUT); # Disable conversion of '\n' to CRLF on windows
+
 foreach (@ARGV) {
   my $stat = stat $_;
   -f -r $stat or cancel "'$_' is not a readable file.";
@@ -16,4 +19,3 @@ foreach (@ARGV) {
   my $size  = $stat->size;
   print "UPD $mtime $size $_\n";
 }
-
