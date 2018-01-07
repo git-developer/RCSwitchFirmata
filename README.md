@@ -4,26 +4,22 @@
 The current implementation, version 2.0.0-SNAPSHOT, is work in progress and tested against
 - ConfigurableFirmata [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)
 - rc-switch [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)
-- perl-firmata [0.63](https://github.com/jnsbyr/perl-firmata)
-- fhem with support for Firmata > 2.6 [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev)
+- FHEM 5.8 updated to 2018-01-06 ([SVN revision 15794](https://svn.fhem.de/trac/browser/trunk/fhem/FHEM/10_FRM.pm?rev=15794)) or newer
+
+FHEM before 2018-01-06 does not support Firmata versions newer than 2.6.
 
 When rc-switch [2.6.0](https://github.com/sui77/rc-switch/releases/tag/2.6.0) or newer is used, sending of tristate codes seems not to work; sending of long codes is possible, however.
-
-When FHEM is used, you have to update the Firmata client manually, because the bundled client does not support Firmata versions newer than 2.6. To allow newer Firmata versions, you have to
-- update perl-firmata to [0.63](https://github.com/jnsbyr/perl-firmata) and
-- add one line in `10_FRM.pm` to use the [protocol version](https://github.com/ntruchsess/fhem-mirror/blob/8cd9a6a7376adc753dc3923cff3cb2fe50234bd7/fhem/FHEM/10_FRM.pm#L410) instead of the [firmware version](https://svn.fhem.de/trac/browser/trunk/fhem/FHEM/10_FRM.pm#L388):
-`$device->{protocol}->{protocol_version} = $device->{protocol}->get_max_supported_protocol_version($device->{metadata}{protocol_version});`
 
 ### Compatibility
 The following constellations have been tested:
 
-| Arduino IDE | ConfigurableFirmata                                                                         | rc-switch                                                         | perl-firmata                                   | FHEM Firmata modules                                                  | Compile | Send         | Receive | Notes            | 
-| ----------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------- | ------- | ------------ | ------- | ---------------  | 
-| 1.8.4       | [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)                | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | [0.63](https://github.com/jnsbyr/perl-firmata) | [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) | OK      | OK           | OK      | Recommended      | 
-| 1.8.4       | [2.9.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.9.0)                  | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | [0.63](https://github.com/jnsbyr/perl-firmata) | [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) | OK      | OK           | OK      |                  | 
-| 1.8.4       | [2.8.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.8.0)                  | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | [0.63](https://github.com/jnsbyr/perl-firmata) | [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) | OK      | OK           | NOK     | In `RCSwitchFirmata.ino`, the version number constants `FIRMATA_FIRMWARE_{MAJOR,MINOR}_VERSION` have to be replaced by `FIRMATA_{MAJOR,MINOR}_VERSION`. |
-| 1.8.4       | [2.6.0](https://github.com/firmata/arduino/commit/2a94af8933b069deb7c704b2a98bc7ecab32d1e6) | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | [0.63](https://github.com/jnsbyr/perl-firmata) | [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) | NOK     |              |         | ConfigurableFirmata file `library.properties` does not contain an `includes`-statement for the necessary header files in the `utility` directory. |
-| 1.8.4       | [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)                | [2.6.2](https://github.com/sui77/rc-switch/releases/tag/2.6.2)    | [0.63](https://github.com/jnsbyr/perl-firmata) | [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) | OK      | partially    | OK      | Sending of `long` codes works, sending of tristate codes doesn't. |
+| Arduino IDE | ConfigurableFirmata                                                                         | rc-switch                                                         | Compile | Send         | Receive | Notes            |
+| ----------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------- | ------------ | ------- | ---------------  |
+| 1.8.4       | [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)                | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | OK      | OK           | OK      | Recommended      |
+| 1.8.4       | [2.9.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.9.0)                  | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | OK      | OK           | OK      |                  |
+| 1.8.4       | [2.8.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.8.0)                  | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | OK      | OK           | NOK     | In `RCSwitchFirmata.ino`, the version number constants `FIRMATA_FIRMWARE_{MAJOR,MINOR}_VERSION` have to be replaced by `FIRMATA_{MAJOR,MINOR}_VERSION`. |
+| 1.8.4       | [2.6.0](https://github.com/firmata/arduino/commit/2a94af8933b069deb7c704b2a98bc7ecab32d1e6) | [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)    | NOK     |              |         | ConfigurableFirmata file `library.properties` does not contain an `includes`-statement for the necessary header files in the `utility` directory. |
+| 1.8.4       | [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)                | [2.6.2](https://github.com/sui77/rc-switch/releases/tag/2.6.2)    | OK      | partially    | OK      | Sending of `long` codes works, sending of tristate codes doesn't. |
 
 It may be possible that workarounds for the listed problems do exist. It may also be possible that other constellations work. Comments and experiences are welcome.
 
