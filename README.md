@@ -1,5 +1,8 @@
 # RCSwitchFirmata
 
+## Compatibility
+The current implementation, version 1.0.0, is compatible to and comes bundled with ConfigurableFirmata v2.6.0 and rc-switch v2.5.2.
+
 ## Description
 *RCSwitchFirmata* is an Arduino sketch that combines [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) and [rc-switch](https://github.com/sui77/rc-switch). It comes with an integration into [FHEM](http://fhem.de).
 

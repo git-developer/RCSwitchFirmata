@@ -1,7 +1,7 @@
 /*
   RCInputFirmata.cpp - Firmata library
 
-  Version: 1.0-SNAPSHOT
+  Version: 1.0.0
   Date:    2014-08-23
   Author:  git-developer ( https://github.com/git-developer )
 
