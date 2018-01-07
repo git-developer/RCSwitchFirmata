@@ -159,7 +159,7 @@ See the thread [FHEM+Arduino Firmata via Ethernet+RF 433 Mhz Sender+Baumarkt-Fun
 * [Firmata Implementation](https://github.com/firmata/arduino)
 * [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata)
 * [rc-switch on GitHub](https://github.com/sui77/rc-switch)
-* [rc-switch on Google Code](https://code.google.com/p/rc-switch/) (deprectaed)
+* [rc-switch on Google Code](https://code.google.com/p/rc-switch/) (deprecated)
 * [perl-firmata](https://github.com/jnsbyr/perl-firmata) with support for Firmata versions newer than 2.6
 * [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) with support for Firmata versions newer than 2.6
 
