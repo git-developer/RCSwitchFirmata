@@ -1,5 +1,12 @@
 # RCSwitchFirmata
 
+## Quick start
+- Connect RF sender and/or receiver to your Arduino board
+- Install Arduino IDE
+- Install Arduino libraries [ConfigurableFirmata v2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0), [rc-switch v2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52) and [RCSwitchFirmata v2.0.0](https://github.com/git-developer/RCSwitchFirmata/releases/tag/v2.0.0)
+- Upload `RCSwitchFirmata.ino`
+- Add the RCSwitchFirmata repository to your FHEM installation and update FHEM. Repository URL: `https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/v2.0.0/FHEM/controls_frm_rc.txt`
+
 ## Current state of development
 The current implementation, version 2.0.0-SNAPSHOT, is work in progress and tested against
 - ConfigurableFirmata [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)
