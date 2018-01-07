@@ -1,0 +1,57 @@
+##########################################
+# Syntax Coloring Map For RCSwitchFirmata
+##########################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+RCInputFirmata	KEYWORD1
+RCOutputFirmata	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+attach             KEYWORD2
+detach             KEYWORD2
+sendMessage        KEYWORD2
+
+getInterrupt       KEYWORD2
+
+sendTristate       KEYWORD2
+sendPackedTristate KEYWORD2
+sendLong           KEYWORD2
+sendString         KEYWORD2
+unpack             KEYWORD2
+pack               KEYWORD2
+getTristateChar    KEYWORD2
+setTristateBit     KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+RCINPUT_DATA
+RCINPUT_UNKNOWN
+RCINPUT_ATTACH
+RCINPUT_DETACH
+RCINPUT_TOLERANCE
+RCINPUT_ENABLE_RAW_DATA
+RCINPUT_MESSAGE
+RCINPUT_NO_INTERRUPT
+
+RCOUTPUT_DATA
+RCOUTPUT_ATTACH
+RCOUTPUT_DETACH
+RCOUTPUT_PROTOCOL
+RCOUTPUT_PULSE_LENGTH
+RCOUTPUT_REPEAT_TRANSMIT
+RCOUTPUT_CODE_TRISTATE
+RCOUTPUT_CODE_LONG
+RCOUTPUT_CODE_CHAR
+RCOUTPUT_CODE_TRISTATE_PACKED
+RCOUTPUT_TRISTATE_0
+RCOUTPUT_TRISTATE_F
+RCOUTPUT_TRISTATE_RESERVED
+RCOUTPUT_TRISTATE_1

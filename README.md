@@ -1,15 +1,29 @@
 # RCSwitchFirmata
 
+## Quick start
+- Connect RF sender and/or receiver to your Arduino board
+- Install Arduino IDE
+- Install Arduino libraries [ConfigurableFirmata v2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0), [rc-switch v2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52) and [RCSwitchFirmata v2.0.0](https://github.com/git-developer/RCSwitchFirmata/releases/tag/v2.0.0)
+- Upload `RCSwitchFirmata.ino`
+- Add the RCSwitchFirmata repository to your FHEM installation and update FHEM. Repository URL: `https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/v2.0.0/FHEM/controls_frm_rc.txt`
+
 ## Compatibility
-The current implementation, version 1.0.0, is compatible to and comes bundled with ConfigurableFirmata v2.6.0 and rc-switch v2.5.2.
+The current implementation, version 2.0.0, is compatible to
+- ConfigurableFirmata [2.10.0](https://github.com/firmata/ConfigurableFirmata/releases/tag/2.10.0)
+- rc-switch [2.5.2](https://github.com/sui77/rc-switch/releases/tag/v2.52)
+- FHEM 5.8 updated to 2018-01-06 ([SVN revision 15794](https://svn.fhem.de/trac/browser/trunk/fhem/FHEM/10_FRM.pm?rev=15794))
+
+FHEM before 2018-01-06 does not support Firmata versions newer than 2.6.
+
+When rc-switch [2.6.0](https://github.com/sui77/rc-switch/releases/tag/2.6.0) or newer is used, sending of tristate codes seems not to work; sending of long codes is possible, however.
 
 ## Description
-*RCSwitchFirmata* is an Arduino sketch that combines [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) and [rc-switch](https://github.com/sui77/rc-switch). It comes with an integration into [FHEM](http://fhem.de).
+[RCSwitchFirmata](https://github.com/git-developer/RCSwitchFirmata) is an adapter between [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) and the [rc-switch](https://github.com/sui77/rc-switch) library. It comes with an integration into [FHEM](http://fhem.de).
 
 RCSwitchFirmata allows you to use a single Arduino for multiple purposes, including radio transmissions. For example, you can read digital inputs, control a relais and switch radio outlets with a single Arduino today. You could extend that to receive the temperature from your weather station tomorrow, without a change to the Arduino sketch.
 
-[Firmata](https://github.com/firmata/arduino) is a protocol for communicating with microcontrollers from software on a host computer. [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) is a plugin-based version of Firmata which allows to read and control an Arduino from a host computer without changes to the Arduino firmware.
-
+[Firmata](https://github.com/firmata/arduino) is a protocol for communicating with microcontrollers from software on a host computer.
+[ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata) is a plugin-based version of Firmata which allows to read and control an Arduino from a host computer without changes to the Arduino firmware.
 [rc-switch](https://github.com/sui77/rc-switch) is a library for sending and receiving signals to radio controlled devices.
 
 ## Hardware configuration
@@ -26,18 +40,26 @@ RCSwitchFirmata allows you to use a single Arduino for multiple purposes, includ
 3. Connect the Arduino to the host.
 
 ## Arduino configuration
+* Details: [arduino/libraries/RCSwitchFirmata/README.md](arduino/libraries/RCSwitchFirmata/README.md)
 ### Requirements
 * Arduino IDE
-* Directory `arduino/libraries` from this project
+* RCSwitchFirmata library (directory `arduino/libraries/RCSwitchFirmata` within this repository)
 
 ### Setup
-1. Copy the content of the project directory `arduino/libraries` into your Arduino library folder.
- * On Windows and Mac, this is the Documents folder in your user home directory, e.g. `My Documents/Arduino/libraries` 
- * On Linux, this is `Sketchbook/libraries` in your user home directory.
-1. Open the RCSwitchFirmata sketch in the Arduino IDE and configure it according to your needs.
-1. Upload the sketch to your Arduino.
+1. Add RCSwitchFirmata, ConfigurableFirmata and rc-switch as arduino libraries, either with the Arduino IDE menu item *Add library...* or by copying them into your Arduino library folder.
+   * On Windows and Mac, this is the Documents folder in your user home directory, e.g. `My Documents/Arduino/libraries`
+   * On Linux, this is `Sketchbook/libraries` in your user home directory.
+1. Copy the example sketch directory `examples/RCSwitchFirmata` to you Arduino sketch folder or a working directory.
+1. Open the `RCSwitchFirmata.ino` sketch in the Arduino IDE and configure it according to your needs.
+1. Connect your hardware to the pins of your Arduino board
+    1. If you want to send RF signals: connect a RC sender to an arbitrary pin
+    1. If you want to receive RF signals: connect a RC receiver to an interrupt-enabled pin
+1. Connect your Arduino board to the host; save, compile and upload your `RCSwitchFirmata.ino` sketch
+1. Connect your Firmata client software to the Arduino
+    1. If you want to send RF signals: send an `RCOUTPUT_ATTACH` message to sender pin
+    1. If you want to receive RF signals: send an `RCINPUT_ATTACH` message to receiver pin
 
-Firmata features can be en-/disabled by in-/excluding the corresponding header in the RCSwitchFirmata sketch.
+Firmata features can be en-/disabled by in-/excluding the corresponding header in the `RCSwitchFirmata.ino` sketch. By default, all features are enabled. Microcontrollers with limited memory (< 16k) are not able to support all features simultaneously. To overcome this limitation, comment out the feature class declaration and associated include for any features that you do not need.
 
 #### FirmataExt
 *FirmataExt* must be enabled because it is required for communication between host and Arduino. It is enabled by default:
@@ -51,7 +73,6 @@ FirmataExt firmataExt;
 RCOutputFirmata is required to send. It is enabled by default:
 
 ```
-#include <RCSwitch.h> //wouldn't load from RCOutputFirmata.h in Arduino1.0.3
 #include <utility/RCOutputFirmata.h>
 RCOutputFirmata rcOutput;
 ```
@@ -60,7 +81,6 @@ RCOutputFirmata rcOutput;
 RCInputFirmata is required to receive. It is enabled by default:
 
 ```
-#include <RCSwitch.h> //wouldn't load from RCInputFirmata.h in Arduino1.0.3
 #include <utility/RCInputFirmata.h>
 RCInputFirmata rcInput;
 ```
@@ -70,16 +90,19 @@ You may disable any Firmata feature to save memory. For example, if you don't ne
 
 ```
 //#include <utility/AnalogOutputFirmata.h>
-AnalogOutputFirmata analogOutput;
+//AnalogOutputFirmata analogOutput;
 ```
 
 ## FHEM configuration
+* Details: [FHEM/README.md](FHEM/README.md)
 ### Requirements
 1. A working FHEM installation in version 5.5 or higher
-2. Directory `FHEM` from this project
 
 ### Setup
-1. Copy the project directory `FHEM` into the root directory of your FHEM installation.
+1. Add the RCSwitchFirmata repository to your FHEM installation so that it will be included by the FHEM `update` command. To achieve this, enter the following command on the FHEM commandline once:
+`update add https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/v2.0.0/FHEM/controls_frm_rc.txt`
+1. Update RCSwitchFirmata manually:
+`update https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/v2.0.0/FHEM/controls_frm_rc.txt`
 1. Add a device for Firmata
 1. To send, add a device for the sender
 1. To receive, add a device for the receiver
@@ -92,7 +115,7 @@ Now let's say you want to switch an Intertechno socket outlet.
 * RF sender module is connected to pin 11,
 * RF receiver module is connected to pin 2
 
-#### RCSwitch Configuration
+#### RCSwitchFirmata Configuration
 
 ```
 define firmata FRM /dev/ttyUSB0@57600
@@ -115,17 +138,24 @@ The signal quality depends on the quality of the RF modules and the antenna.
 * For best results, a superheterodyne receiver (RXB6) is recommended. Very cheap receivers (XY-MK-5V) may work, but this depends on the environment and the sensitivity of controlled devices.
 
 ### Build environment
-RCSwitchFirmata was developed on and works with [Arduino IDE 1.5.6-r2](https://www.arduino.cc/en/Main/OldSoftwareReleases#1.5.x). It seems that in later versions of the IDE, the include mechanism was changed, causing compile errors. This problem occurs at least on version 1.5.8 & 1.6.4.
+RCSwitchFirmata was developed on and works with [Arduino IDE 1.8.4](https://www.arduino.cc/en/Main/OldSoftwareReleases). In earlier versions of the IDE, the include mechanism is different causing compile errors.
 
 ## Project status
-This project was developed on the FHEM forum in 2014 and moved to GitHub in 2015.
+This project was developed on the FHEM forum in 2014, moved to GitHub in 2015 and was updated to ConfigurableFirmata 2.10 in 2017.
 
 ## History
 See the thread [FHEM+Arduino Firmata via Ethernet+RF 433 Mhz Sender+Baumarkt-Funksteckdosen](http://forum.fhem.de/index.php/topic,22320.0.html) for details about the development of this project.
 
 ## Links
 * [FHEM+Arduino Firmata via Ethernet+RF 433 Mhz Sender+Baumarkt-Funksteckdosen](http://forum.fhem.de/index.php/topic,22320.0.html)
-* [Arduino Firmata  in FHEM](http://www.fhemwiki.de/wiki/Arduino_Firmata)
-* [Firmata](https://github.com/firmata/arduino)
-* [rc-switch on Google Code](https://code.google.com/p/rc-switch/)
+* [Arduino Firmata in FHEM](http://www.fhemwiki.de/wiki/Arduino_Firmata)
+* [Firmata Protocol](https://github.com/firmata/protocol)
+* [Firmata Implementation](https://github.com/firmata/arduino)
+* [ConfigurableFirmata](https://github.com/firmata/ConfigurableFirmata)
 * [rc-switch on GitHub](https://github.com/sui77/rc-switch)
+* [rc-switch on Google Code](https://code.google.com/p/rc-switch/) (deprecated)
+* [perl-firmata](https://github.com/jnsbyr/perl-firmata) with support for Firmata versions newer than 2.6
+* [fhem-mirror/dev](https://github.com/ntruchsess/fhem-mirror/tree/dev) with support for Firmata versions newer than 2.6
+
+## License
+This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or (at your option) any later version. See file `LICENSE` for further informations on licensing terms.
