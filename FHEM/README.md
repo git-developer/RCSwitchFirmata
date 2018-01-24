@@ -13,7 +13,7 @@ update check https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev
 
 Manual update of RCSwitchFirmata:
 ```
-update https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/development/FHEM/controls_frm_rc.txt
+update all https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/development/FHEM/controls_frm_rc.txt
 ```
 
 See the [FHEM-Wiki](https://wiki.fhem.de/wiki/Update#Repository-Verwaltung) for details on the FHEM `update` command.

@@ -115,7 +115,7 @@ You may disable any Firmata feature to save memory. For example, if you don't ne
 1. Add the RCSwitchFirmata repository to your FHEM installation so that it will be included by the FHEM `update` command. To achieve this, enter the following command on the FHEM commandline once:
 `update add https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev-2.0.0/FHEM/controls_frm_rc.txt`
 1. Update RCSwitchFirmata manually:
-`update https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev-2.0.0/FHEM/controls_frm_rc.txt`
+`update all https://raw.githubusercontent.com/git-developer/RCSwitchFirmata/dev-2.0.0/FHEM/controls_frm_rc.txt`
 1. Add a device for Firmata
 1. To send, add a device for the sender
 1. To receive, add a device for the receiver
